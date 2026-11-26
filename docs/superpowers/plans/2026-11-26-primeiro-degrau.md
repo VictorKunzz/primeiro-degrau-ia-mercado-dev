@@ -20,7 +20,7 @@
 - Regras de veredito do §7.1 do design são fixas; não alterar thresholds depois de ver resultados.
 - Seed global `SEED = 42`. Chave temporal mensal: coluna `mes` tipo `datetime64` no primeiro dia do mês.
 - Corte pré-IA: treino até `2022-10-01` inclusive; intervenção `2022-11-30` (ChatGPT).
-- Commits pequenos, mensagem em português, terminando com `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Commits pequenos, mensagem em português.
 
 ## Review Focus
 

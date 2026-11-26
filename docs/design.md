@@ -88,7 +88,7 @@ Título de cada seção = conclusão (action title). Após cada gráfico: **o qu
 | H2 sênior+IA < sênior+júnior | Salários do survey + simulação | RCTs Copilot (+26%), METR 2025 (−19%) |
 | H3 mercado mais qualificado/exigente | Gap salarial e uso de agentes por experiência; classificador | Indeed (ganho concentrado em sênior) |
 
-## 7.1 Regras de veredito (definidas antes de rodar) — *decisão do Claude*
+## 7.1 Regras de veredito (definidas antes de rodar) — *decisão de projeto*
 
 - **Ato 1 (SO):** "efeito sustentado" se o real ficar abaixo do IC 95% do contrafactual por ≥ 6 meses seguidos após nov/2022 **e** nenhum placebo produzir efeito de magnitude ≥ metade do efeito real; o backtest do pré-período precisa bater o baseline sazonal ingênuo (MAPE menor). Caso contrário: "inconclusivo".
 - **Ato 2 (vagas):** "consistente com IA" só se software cair mais que a mediana dos setores **depois de** controlar juros (Fed Funds, FRED `FEDFUNDS`, como covariável) e a diferença for significativa (HAC, p < 0,05). Caso contrário: "consistente com ciclo".
@@ -96,15 +96,15 @@ Título de cada seção = conclusão (action title). Após cada gráfico: **o qu
 - **Classificador:** só é interpretado se ROC-AUC exceder o baseline Dummy/logística simples em ≥ 0,03 na validação cruzada.
 - Veredito por hipótese: confirmada (todas as evidências próprias passam), parcial (algumas), não sustentada (nenhuma).
 
-## 7.2 Premissas da conta do gestor — *decisão do Claude*
+## 7.2 Premissas da conta do gestor — *decisão de projeto*
 
 Parametrizada, mostrada em 3 cenários + 1 teste de estresse: produtividade do sênior com IA +0% (pessimista), +15% (central), +30% (otimista), −19% (estresse, METR 2025); produção do júnior = 50% da de um sênior (premissa explícita, com sensibilidade 30–70%); salários = mediana do survey mais recente (EUA, júnior ≤2 anos, sênior ≥10 anos); custo de IA = US$ 200/mês por dev (plano de agente). Saída: ganho de produtividade mínimo que torna sênior+IA mais barato que sênior+júnior por unidade de trabalho.
 
-## 7.3 Papel do classificador na história — *decisão do Claude*
+## 7.3 Papel do classificador na história — *decisão de projeto*
 
 Testa H3: se experiência, cargo e uso avançado de IA (agentes) forem os fatores que mais **reduzem** a percepção de ameaça, isso sustenta "qualificação + domínio de IA é a proteção". Decisão que apoia: o que o estudante deve priorizar.
 
-## 7.4 Execução — *decisão do Claude*
+## 7.4 Execução — *decisão de projeto*
 
 Cálculos pesados (backtest rolling, placebos, CV) rodam em `src/models/` e salvam resultados em `data/results/`; o notebook lê resultados e recalcula só o leve (ajuste final do SARIMAX, gráficos). Uma flag `RECALCULAR = False` no topo permite rodar tudo do zero.
 
@@ -128,7 +128,7 @@ docs/            design.md, pesquisa/ (relatórios)
 1. Agente ETL (primeiro): `src/` + `data/processed/`.
 2. Agente séries temporais (paralelo ao 3): Atos 1 e 2, funções + figuras.
 3. Agente survey (paralelo ao 2): Ato 3 + conta do gestor.
-4. Claude (orquestração): monta o notebook, narrativa (`dataviz`, `humanizer-pt-br`).
+4. Orquestração: monta o notebook, narrativa (`dataviz`, `humanizer-pt-br`).
 5. Agente verificador: confere citações/números, roda do zero, caça vazamento e afirmação causal.
 Extra B (Streamlit) só se 1–5 terminarem com folga.
 
