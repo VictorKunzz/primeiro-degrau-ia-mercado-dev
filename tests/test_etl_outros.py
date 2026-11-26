@@ -37,3 +37,20 @@ def test_capacidade_cummax_e_ffill():
     assert s.loc["2024-03-01"] == 60.0
     assert s.loc["2024-06-01"] == 60.0           # cummax não diminui
     assert s.dropna().is_monotonic_increasing
+
+
+def test_fedfunds_dbnomics_mes_inicio():
+    bruto = pd.DataFrame({"period": ["2024-01-31", "2024-02-29"], "v": [5.33, "NA"]})
+    out = fred.fedfunds_mensal(bruto, ate=pd.Timestamp("2024-12-01"))
+    assert list(out["mes"]) == [pd.Timestamp("2024-01-01")]
+    assert out["serie"].iloc[0] == "FEDFUNDS" and out["valor"].iloc[0] == 5.33
+
+
+def test_indeed_total_usa_sa_e_total_postings():
+    dias = pd.date_range("2024-01-01", "2024-02-10")
+    b = pd.DataFrame({"date": dias, "indeed_job_postings_index_SA": 90.0,
+                      "indeed_job_postings_index_NSA": 1.0, "variable": "total postings"})
+    b2 = b.assign(variable="new postings", indeed_job_postings_index_SA=5.0)
+    out = fred.indeed_total(pd.concat([b, b2]), ate=pd.Timestamp("2024-12-01"))
+    assert list(out["mes"]) == [pd.Timestamp("2024-01-01")]
+    assert out["valor"].iloc[0] == 90.0 and out["serie"].iloc[0] == "IHLIDXUS"

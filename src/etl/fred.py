@@ -1,23 +1,28 @@
-"""ETL FRED: séries mensais/diárias via fredgraph.csv (sem chave) -> média mensal.
+"""ETL macro (séries com nomes FRED): juros e vagas totais, saída longa mes, serie, valor.
 
-Séries padrão: FEDFUNDS (juros, mensal) e IHLIDXUS (índice Indeed de vagas, diário).
-Saída longa: mes, serie, valor. Meses incompletos de séries diárias são descartados.
+O fred.stlouisfed.org está inacessível nesta máquina, então as fontes reais são:
+- ``FEDFUNDS``: taxa de fundos federais (efetiva, mensal) do release H.15 do Federal Reserve,
+  espelhado pelo DBnomics (FED/H15/129.FF.O). ``period`` é fim de mês -> ``mes`` = 1º dia do mês.
+- ``IHLIDXUS``: total de vagas Indeed (EUA, agregado), Hiring Lab
+  ``aggregate_job_postings_US.csv``, ``variable == "total postings"``, coluna
+  ``indeed_job_postings_index_SA`` (dessazonalizada); média mensal só de meses completos.
+O nome da série segue o ID FRED para manter o contrato com o restante do projeto.
 """
 from __future__ import annotations
 
-import io
 import urllib.request
 
 import pandas as pd
 
 from src.config import PROCESSED, RAW, ultimo_mes_completo
 
-URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
+URL_FEDFUNDS = "https://api.db.nomics.world/v22/series/FED/H15/129.FF.O?observations=1&format=csv"
+URL_INDEED_AGG = "https://raw.githubusercontent.com/hiring-lab/job_postings_tracker/master/US/aggregate_job_postings_US.csv"
 SERIES = ["FEDFUNDS", "IHLIDXUS"]
 
 
 def agregar_mensal(df: pd.DataFrame, serie: str, ate: pd.Timestamp | None = None) -> pd.DataFrame:
-    """df com colunas date, valor -> mes, serie, valor (só meses completos)."""
+    """df com colunas date, valor (diário) -> mes, serie, valor (só meses completos)."""
     ate = ate if ate is not None else ultimo_mes_completo()
     d = df.copy()
     d["date"] = pd.to_datetime(d["date"])
@@ -25,12 +30,33 @@ def agregar_mensal(df: pd.DataFrame, serie: str, ate: pd.Timestamp | None = None
     d = d.dropna(subset=["valor"])
     d["mes"] = d["date"].dt.to_period("M").dt.to_timestamp()
     g = d.groupby("mes").agg(valor=("valor", "mean"), n=("date", "nunique")).reset_index()
-    # séries mensais têm 1 obs/mês; diárias precisam cobrir o mês todo
-    if (g["n"] > 1).any():
+    if (g["n"] > 1).any():  # série diária: exige o mês inteiro
         g = g[g["n"] == g["mes"].dt.days_in_month]
     g = g[g["mes"] <= ate].copy()
     g["serie"] = serie
     return g[["mes", "serie", "valor"]]
+
+
+def fedfunds_mensal(bruto: pd.DataFrame, ate: pd.Timestamp | None = None) -> pd.DataFrame:
+    """CSV DBnomics (period fim de mês, 2ª coluna = valor) -> mes, serie, valor."""
+    ate = ate if ate is not None else ultimo_mes_completo()
+    d = pd.DataFrame({"date": pd.to_datetime(bruto.iloc[:, 0]),
+                      "valor": pd.to_numeric(bruto.iloc[:, 1], errors="coerce")}).dropna()
+    d["mes"] = d["date"].dt.to_period("M").dt.to_timestamp()
+    d["serie"] = "FEDFUNDS"
+    return d[d["mes"] <= ate][["mes", "serie", "valor"]].reset_index(drop=True)
+
+
+def indeed_total(bruto: pd.DataFrame, ate: pd.Timestamp | None = None) -> pd.DataFrame:
+    """CSV agregado Indeed -> mes, serie='IHLIDXUS', valor (índice SA, meses completos)."""
+    b = bruto[bruto["variable"] == "total postings"]
+    b = b.rename(columns={"indeed_job_postings_index_SA": "valor"})[["date", "valor"]]
+    return agregar_mensal(b, "IHLIDXUS", ate)
+
+
+def _baixar(url: str, arq) -> None:
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    arq.write_bytes(urllib.request.urlopen(req, timeout=60).read())
 
 
 def carregar(series: list[str] | None = None, baixar: bool = True) -> pd.DataFrame:
@@ -38,14 +64,16 @@ def carregar(series: list[str] | None = None, baixar: bool = True) -> pd.DataFra
     pasta = RAW / "fred"
     pasta.mkdir(parents=True, exist_ok=True)
     partes = []
-    for s in series:
-        arq = pasta / f"{s}.csv"
+    if "FEDFUNDS" in series:
+        arq = pasta / "FEDFUNDS_dbnomics.csv"
         if baixar or not arq.exists():
-            req = urllib.request.Request(URL.format(id=s), headers={"User-Agent": "Mozilla/5.0"})
-            arq.write_bytes(urllib.request.urlopen(req, timeout=60).read())
-        bruto = pd.read_csv(io.BytesIO(arq.read_bytes()))
-        bruto.columns = ["date", "valor"]
-        partes.append(agregar_mensal(bruto, s))
+            _baixar(URL_FEDFUNDS, arq)
+        partes.append(fedfunds_mensal(pd.read_csv(arq)))
+    if "IHLIDXUS" in series:
+        arq = pasta / "aggregate_job_postings_US.csv"
+        if baixar or not arq.exists():
+            _baixar(URL_INDEED_AGG, arq)
+        partes.append(indeed_total(pd.read_csv(arq)))
     return pd.concat(partes, ignore_index=True)
 
 
