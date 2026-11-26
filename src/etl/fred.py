@@ -10,7 +10,7 @@ O nome da série segue o ID FRED para manter o contrato com o restante do projet
 """
 from __future__ import annotations
 
-import urllib.request
+import requests
 
 import pandas as pd
 
@@ -21,8 +21,11 @@ URL_INDEED_AGG = "https://raw.githubusercontent.com/hiring-lab/job_postings_trac
 SERIES = ["FEDFUNDS", "IHLIDXUS"]
 
 
-def agregar_mensal(df: pd.DataFrame, serie: str, ate: pd.Timestamp | None = None) -> pd.DataFrame:
-    """df com colunas date, valor (diário) -> mes, serie, valor (só meses completos)."""
+def agregar_mensal(df: pd.DataFrame, serie: str, ate: pd.Timestamp | None = None,
+                   diaria: bool = True) -> pd.DataFrame:
+    """df com colunas date, valor -> mes, serie, valor.
+
+    diaria=True exige o mês inteiro observado; diaria=False aceita 1 obs/mês."""
     ate = ate if ate is not None else ultimo_mes_completo()
     d = df.copy()
     d["date"] = pd.to_datetime(d["date"])
@@ -30,7 +33,7 @@ def agregar_mensal(df: pd.DataFrame, serie: str, ate: pd.Timestamp | None = None
     d = d.dropna(subset=["valor"])
     d["mes"] = d["date"].dt.to_period("M").dt.to_timestamp()
     g = d.groupby("mes").agg(valor=("valor", "mean"), n=("date", "nunique")).reset_index()
-    if (g["n"] > 1).any():  # série diária: exige o mês inteiro
+    if diaria:
         g = g[g["n"] == g["mes"].dt.days_in_month]
     g = g[g["mes"] <= ate].copy()
     g["serie"] = serie
@@ -38,10 +41,11 @@ def agregar_mensal(df: pd.DataFrame, serie: str, ate: pd.Timestamp | None = None
 
 
 def fedfunds_mensal(bruto: pd.DataFrame, ate: pd.Timestamp | None = None) -> pd.DataFrame:
-    """CSV DBnomics (period fim de mês, 2ª coluna = valor) -> mes, serie, valor."""
+    """CSV DBnomics (colunas period e a coluna de valor) -> mes, serie, valor."""
     ate = ate if ate is not None else ultimo_mes_completo()
-    d = pd.DataFrame({"date": pd.to_datetime(bruto.iloc[:, 0]),
-                      "valor": pd.to_numeric(bruto.iloc[:, 1], errors="coerce")}).dropna()
+    col_valor = next(c for c in bruto.columns if c != "period")  # nome longo varia
+    d = pd.DataFrame({"date": pd.to_datetime(bruto["period"]),
+                      "valor": pd.to_numeric(bruto[col_valor], errors="coerce")}).dropna()
     d["mes"] = d["date"].dt.to_period("M").dt.to_timestamp()
     d["serie"] = "FEDFUNDS"
     return d[d["mes"] <= ate][["mes", "serie", "valor"]].reset_index(drop=True)
@@ -55,8 +59,9 @@ def indeed_total(bruto: pd.DataFrame, ate: pd.Timestamp | None = None) -> pd.Dat
 
 
 def _baixar(url: str, arq) -> None:
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    arq.write_bytes(urllib.request.urlopen(req, timeout=60).read())
+    r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=60)
+    r.raise_for_status()
+    arq.write_bytes(r.content)
 
 
 def carregar(series: list[str] | None = None, baixar: bool = True) -> pd.DataFrame:

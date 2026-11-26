@@ -26,16 +26,16 @@ INICIO = pd.Timestamp("2019-01-01")
 
 # (data, marco, onda, fonte) - datas conferidas em 26/11/2026 nas páginas oficiais.
 MARCOS = [
-    ("2022-06-21", "GitHub Copilot disponível a todos (GA)", "assistente", "https://github.blog/2022/06/21/github-copilot-is-generally-available-to-all-developers/"),
+    ("2022-06-21", "GitHub Copilot disponível a todos (GA)", "assistente", "https://github.blog/2022-06-21-github-copilot-is-generally-available-to-all-developers/"),
     ("2022-11-30", "Lançamento do ChatGPT", "chat", "https://openai.com/index/chatgpt/"),
     ("2023-03-14", "GPT-4", "chat", "https://openai.com/index/gpt-4-research/"),
     ("2024-03-04", "Claude 3 (Opus/Sonnet/Haiku)", "assistente", "https://www.anthropic.com/news/claude-3-family"),
-    ("2024-03-12", "Devin, primeiro 'engenheiro de software IA' (Cognition)", "agente", "https://cognition.ai/introducing-devin"),
+    ("2024-03-12", "Devin, primeiro 'engenheiro de software IA' (Cognition)", "agente", "https://cognition.com/introducing-devin"),
     ("2024-05-13", "GPT-4o", "assistente", "https://openai.com/index/hello-gpt-4o/"),
     ("2025-02-24", "Claude Code (prévia) + Claude 3.7 Sonnet", "agente", "https://www.anthropic.com/news/claude-3-7-sonnet"),
-    ("2025-04-16", "OpenAI Codex CLI (agente de terminal) + o3/o4-mini", "agente", "https://techcrunch.com/2025/04/16/openai-debuts-codex-cli-an-open-source-coding-tool-for-terminals"),
+    ("2025-04-16", "OpenAI Codex CLI (agente de terminal) + o3/o4-mini", "agente", "https://openai.com/index/introducing-o3-and-o4-mini/"),
     ("2025-05-16", "OpenAI Codex (agente de código na nuvem)", "agente", "https://openai.com/index/introducing-codex/"),
-    ("2025-05-19", "GitHub Copilot coding agent (Microsoft Build)", "agente", "https://github.com/newsroom/press-releases/coding-agent-for-github-copilot"),
+    ("2025-05-19", "GitHub Copilot coding agent (Microsoft Build)", "agente", "https://github.blog/changelog/2025-05-19-github-copilot-coding-agent-in-public-preview/"),
     ("2025-05-22", "Claude 4 e Claude Code disponível geral (GA)", "agente", "https://www.anthropic.com/news/claude-4"),
     ("2025-08-07", "GPT-5", "agente", "https://openai.com/index/introducing-gpt-5/"),
     ("2025-11-24", "Claude Opus 4.5", "agente", "https://www.anthropic.com/news/claude-opus-4-5"),

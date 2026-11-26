@@ -20,7 +20,7 @@ def test_indeed_descarta_mes_apos_ultimo_completo():
 
 def test_fred_mensal_e_diaria():
     m = pd.DataFrame({"date": ["2024-01-01", "2024-02-01"], "valor": [5.0, "."]})
-    out = fred.agregar_mensal(m, "X", ate=pd.Timestamp("2024-12-01"))
+    out = fred.agregar_mensal(m, "X", ate=pd.Timestamp("2024-12-01"), diaria=False)
     assert len(out) == 1 and out["valor"].iloc[0] == 5.0
     d = pd.DataFrame({"date": pd.date_range("2024-01-01", "2024-02-10"), "valor": 1.0})
     out = fred.agregar_mensal(d, "Y", ate=pd.Timestamp("2024-12-01"))
@@ -40,7 +40,7 @@ def test_capacidade_cummax_e_ffill():
 
 
 def test_fedfunds_dbnomics_mes_inicio():
-    bruto = pd.DataFrame({"period": ["2024-01-31", "2024-02-29"], "v": [5.33, "NA"]})
+    bruto = pd.DataFrame({"period": ["2024-01-31", "2024-02-29"], "Monthly - FF": [5.33, "NA"]})
     out = fred.fedfunds_mensal(bruto, ate=pd.Timestamp("2024-12-01"))
     assert list(out["mes"]) == [pd.Timestamp("2024-01-01")]
     assert out["serie"].iloc[0] == "FEDFUNDS" and out["valor"].iloc[0] == 5.33

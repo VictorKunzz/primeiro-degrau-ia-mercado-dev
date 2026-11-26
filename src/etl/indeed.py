@@ -9,7 +9,7 @@ Fonte: https://github.com/hiring-lab/job_postings_tracker (CC BY 4.0).
 """
 from __future__ import annotations
 
-import urllib.request
+import requests
 
 import pandas as pd
 
@@ -35,7 +35,9 @@ def carregar(baixar: bool = True) -> pd.DataFrame:
     pasta.mkdir(parents=True, exist_ok=True)
     arq = pasta / "job_postings_by_sector_US.csv"
     if baixar or not arq.exists():
-        urllib.request.urlretrieve(URL, arq)
+        r = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=60)
+        r.raise_for_status()
+        arq.write_bytes(r.content)
     bruto = pd.read_csv(arq)
     bruto = bruto[bruto["variable"] == VARIAVEL].rename(
         columns={"display_name": "setor", "indeed_job_postings_index": "indice"}
