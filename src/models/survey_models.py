@@ -84,24 +84,24 @@ def _pipe(modelo, cols) -> Pipeline:
     return Pipeline([("enc", enc), ("m", modelo)])
 
 
-def classificador_ameaca(df: pd.DataFrame, seed: int = SEED) -> dict:
-    """CV 5 folds de Dummy / logística / HGB para prever 'IA ameaça meu emprego'."""
-    anos = df.loc[df["ia_ameaca"].notna(), "ano"]
-    ano = int(anos.max())
-    d = df[(df["ano"] == ano) & df["ia_ameaca"].isin(list(MAPEAMENTO_AMEACA))].copy()
-    y = d["ia_ameaca"].map(MAPEAMENTO_AMEACA).astype(int).to_numpy()
-    X = preparar_X(d)
-
-    modelos = {
+def _modelos(seed):
+    return {
         "dummy": _pipe(DummyClassifier(strategy="prior"), FEATURES),
         "logistica_so_faixa_exp": _pipe(LogisticRegression(max_iter=2000, class_weight="balanced"), ["faixa_exp"]),
         "logistica": _pipe(LogisticRegression(max_iter=2000, class_weight="balanced"), FEATURES),
         "hgb": _pipe(HistGradientBoostingClassifier(random_state=seed, class_weight="balanced"), FEATURES),
     }
+
+
+def _avaliar(X: pd.DataFrame, y: np.ndarray, seed: int) -> dict:
+    """Split 80/20 primeiro; CV 5 folds e escolha do modelo só no treino (80%);
+    o hold-out (20%) só é usado para AUC final e permutation importance."""
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=seed)
+    modelos = _modelos(seed)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
     metricas = {}
     for nome, m in modelos.items():
-        r = cross_validate(m, X, y, cv=cv, scoring=["roc_auc", "f1"])
+        r = cross_validate(m, X_tr, y_tr, cv=cv, scoring=["roc_auc", "f1"])
         metricas[nome] = {
             "auc_media": float(r["test_roc_auc"].mean()), "auc_dp": float(r["test_roc_auc"].std()),
             "f1_media": float(r["test_f1"].mean()), "f1_dp": float(r["test_f1"].std()),
@@ -109,25 +109,43 @@ def classificador_ameaca(df: pd.DataFrame, seed: int = SEED) -> dict:
     auc = {k: v["auc_media"] for k, v in metricas.items()}
     melhor = max(("logistica", "hgb"), key=lambda k: auc[k])
     delta_dummy = auc[melhor] - auc["dummy"]
-    interpretavel = bool(delta_dummy >= LIMIAR_INTERPRETAVEL)
-
-    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=seed)
     final = modelos[melhor].fit(X_tr, y_tr)
     pi = permutation_importance(final, X_te, y_te, scoring="roc_auc", n_repeats=10, random_state=seed)
     imp = (pd.DataFrame({"feature": FEATURES, "importancia_media": pi.importances_mean,
                          "importancia_dp": pi.importances_std})
            .sort_values("importancia_media", ascending=False).reset_index(drop=True))
-
     return {
-        "ano": ano, "n": int(len(y)), "prevalencia_ameaca": float(y.mean()),
-        "mapeamento_alvo": MAPEAMENTO_AMEACA, "features": FEATURES,
-        "tratamento_features": "categóricas one-hot; cargo = 1º item listado, cargo/pais/emprego top 10 + Outros; nulos = 'NA'",
-        "cv": "StratifiedKFold(5, shuffle, seed)", "metricas": metricas, "melhor_modelo": melhor,
+        "n": int(len(y)), "prevalencia_ameaca": float(y.mean()),
+        "metricas": metricas, "melhor_modelo": melhor,
         "delta_auc_melhor_vs_dummy": float(delta_dummy),
         "delta_auc_hgb_vs_logistica": float(auc["hgb"] - auc["logistica"]),
         "delta_auc_melhor_vs_logistica_so_faixa_exp": float(auc[melhor] - auc["logistica_so_faixa_exp"]),
-        "regra": "interpretável se AUC(melhor) − AUC(dummy) >= 0,03 (design §7.1)",
-        "interpretavel": interpretavel,
+        "interpretavel": bool(delta_dummy >= LIMIAR_INTERPRETAVEL),
         "importancias_holdout": imp.to_dict(orient="records"),
         "auc_holdout": float(roc_auc_score(y_te, final.predict_proba(X_te)[:, 1])),
     }
+
+
+def classificador_ameaca(df: pd.DataFrame, seed: int = SEED) -> dict:
+    """Dummy / logística / HGB para prever 'IA ameaça meu emprego' (último ano com ia_ameaca).
+
+    Principal: usa_agentes nulo vira categoria "NA". Sensibilidade: mesmas etapas
+    excluindo as linhas com usa_agentes nulo.
+    """
+    anos = df.loc[df["ia_ameaca"].notna(), "ano"]
+    ano = int(anos.max())
+    d = df[(df["ano"] == ano) & df["ia_ameaca"].isin(list(MAPEAMENTO_AMEACA))].copy()
+    y = d["ia_ameaca"].map(MAPEAMENTO_AMEACA).astype(int).to_numpy()
+    X = preparar_X(d)
+    out = {
+        "ano": ano, "mapeamento_alvo": MAPEAMENTO_AMEACA, "features": FEATURES,
+        "tratamento_features": "categóricas one-hot; cargo = 1º item listado, cargo/pais/emprego top 10 + Outros; nulos = 'NA'",
+        "cv": "split 80/20 estratificado; StratifiedKFold(5, shuffle, seed) só no treino; modelo escolhido pela AUC de CV no treino",
+        "regra": "interpretável se AUC(melhor) − AUC(dummy) >= 0,03 (design §7.1)",
+        "n_usa_agentes_na": int((X["usa_agentes"] == "NA").sum()),
+    }
+    out.update(_avaliar(X, y, seed))
+    sem_na = (X["usa_agentes"] != "NA").to_numpy()
+    if sem_na.sum() >= 50 and 0 < y[sem_na].mean() < 1:
+        out["sensibilidade_sem_na_usa_agentes"] = _avaliar(X[sem_na], y[sem_na], seed)
+    return out

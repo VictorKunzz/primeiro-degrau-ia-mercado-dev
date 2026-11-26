@@ -3,8 +3,17 @@
   "H1_survey": {
     "veredito": "confirmada",
     "evidencias": {
-      "queda_emprego_jr": true,
-      "queda_jr_maior_que_sr": true
+      "queda_jr_bruto": true,
+      "dif_em_dif_bruto": true,
+      "queda_jr_ipw": true,
+      "dif_em_dif_ipw": true,
+      "queda_jr_workexp_igual_2": true,
+      "dif_em_dif_workexp_igual_2": true
+    },
+    "regra": "confirmada se nos 3 métodos (bruto, ipw, workexp_igual_2) a queda do júnior e a dif-em-dif têm IC 95% < 0; parcial se em alguns.",
+    "faixa_efeito_jr": {
+      "min": -0.19789525245235556,
+      "max": -0.08637873754152814
     },
     "numeros": {
       "emprego": {
@@ -12,23 +21,82 @@
           2025,
           2026
         ],
-        "variacao_jr": {
-          "estimativa": -0.19789525245235556,
-          "ic_inf": -0.21909381468805067,
-          "ic_sup": -0.17655619228406513,
-          "cruza_zero": false
-        },
-        "variacao_sr": {
-          "estimativa": -0.01864981406570876,
-          "ic_inf": -0.027575873801414956,
-          "ic_sup": -0.009306157487471522,
-          "cruza_zero": false
-        },
-        "dif_em_dif_jr_menos_sr": {
-          "estimativa": -0.1792454383866468,
-          "ic_inf": -0.20237920051224287,
-          "ic_sup": -0.15643731296478675,
-          "cruza_zero": false
+        "metodos": {
+          "bruto": {
+            "descricao": "% empregado entre quem respondeu WorkExp na faixa (sem correção).",
+            "pct_jr": {
+              "2025": 0.6216827813207159,
+              "2026": 0.4237875288683603
+            },
+            "variacao_jr": {
+              "estimativa": -0.19789525245235556,
+              "ic_inf": -0.21909381468805067,
+              "ic_sup": -0.17655619228406513,
+              "cruza_zero": false
+            },
+            "variacao_sr": {
+              "estimativa": -0.01864981406570876,
+              "ic_inf": -0.02744549831518618,
+              "ic_sup": -0.009659091919832545,
+              "cruza_zero": false
+            },
+            "dif_em_dif_jr_menos_sr": {
+              "estimativa": -0.1792454383866468,
+              "ic_inf": -0.20288408949728778,
+              "ic_sup": -0.15648037699217276,
+              "cruza_zero": false
+            }
+          },
+          "ipw": {
+            "descricao": "Reponderado por 1/P(responder WorkExp | ano, categoria de Employment): corrige a diferença de taxa de resposta (ex.: Employed 95,5%->84,9%, Student 41,3%->51,6%).",
+            "pct_jr": {
+              "2025": 0.4694482415199835,
+              "2026": 0.3330538162271805
+            },
+            "variacao_jr": {
+              "estimativa": -0.136394425292803,
+              "ic_inf": -0.15703657511302788,
+              "ic_sup": -0.11522166078141739,
+              "cruza_zero": false
+            },
+            "variacao_sr": {
+              "estimativa": -0.017180713229096645,
+              "ic_inf": -0.026547313640586954,
+              "ic_sup": -0.007638777933076419,
+              "cruza_zero": false
+            },
+            "dif_em_dif_jr_menos_sr": {
+              "estimativa": -0.11921371206370635,
+              "ic_inf": -0.14307226625438854,
+              "ic_sup": -0.09583922692516823,
+              "cruza_zero": false
+            }
+          },
+          "workexp_igual_2": {
+            "descricao": "Só WorkExp == 2 na faixa júnior (em 2026 as respostas se amontoam em 1 ano); comparação com ≥10 bruto.",
+            "pct_jr": {
+              "2025": 0.6877076411960132,
+              "2026": 0.6013289036544851
+            },
+            "variacao_jr": {
+              "estimativa": -0.08637873754152814,
+              "ic_inf": -0.1171200166112957,
+              "ic_sup": -0.05315614617940201,
+              "cruza_zero": false
+            },
+            "variacao_sr": {
+              "estimativa": -0.01864981406570876,
+              "ic_inf": -0.02744549831518618,
+              "ic_sup": -0.009659091919832545,
+              "cruza_zero": false
+            },
+            "dif_em_dif_jr_menos_sr": {
+              "estimativa": -0.06772892347581938,
+              "ic_inf": -0.10133416058448558,
+              "ic_sup": -0.034228846493273554,
+              "cruza_zero": false
+            }
+          }
         },
         "robustez_jr_sem_estudantes": {
           "pct_2025": 0.8018041920933935,
@@ -47,66 +115,160 @@
         {
           "ano": 2024,
           "faixa_exp": "≤2",
+          "metodo": "bruto",
           "n": 3538,
           "pct_empregado": 0.9734313171283211,
-          "ic_inf": 0.9683436970039571,
-          "ic_sup": 0.9785260033917467,
+          "ic_inf": 0.967495760316563,
+          "ic_sup": 0.9785189372526851,
           "pct_so_estudante": NaN,
           "usar_na_inferencia": false
         },
         {
           "ano": 2024,
           "faixa_exp": "≥10",
+          "metodo": "bruto",
           "n": 14442,
           "pct_empregado": 0.9373355490929234,
-          "ic_inf": 0.9333887273230854,
-          "ic_sup": 0.9412823708627613,
+          "ic_inf": 0.9333194848358953,
+          "ic_sup": 0.941284101924941,
           "pct_so_estudante": NaN,
           "usar_na_inferencia": false
         },
         {
           "ano": 2025,
           "faixa_exp": "≤2",
+          "metodo": "bruto",
           "n": 4861,
           "pct_empregado": 0.6216827813207159,
-          "ic_inf": 0.6068710141946102,
-          "ic_sup": 0.6358773914832339,
+          "ic_inf": 0.6087173421106769,
+          "ic_sup": 0.6354659535075088,
           "pct_so_estudante": 0.22464513474593706,
           "usar_na_inferencia": true
         },
         {
           "ano": 2025,
           "faixa_exp": "≥10",
+          "metodo": "bruto",
           "n": 23921,
           "pct_empregado": 0.7469587391831445,
-          "ic_inf": 0.7415241837715815,
-          "ic_sup": 0.752351490322311,
+          "ic_inf": 0.7410632916684086,
+          "ic_sup": 0.7523943397015175,
+          "pct_so_estudante": 0.004514861418837005,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2025,
+          "faixa_exp": "≤2",
+          "metodo": "ipw",
+          "n": 4861,
+          "pct_empregado": 0.4694482415199835,
+          "ic_inf": 0.455413975785364,
+          "ic_sup": 0.48403839399104376,
+          "pct_so_estudante": 0.3922582764830692,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2025,
+          "faixa_exp": "≥10",
+          "metodo": "ipw",
+          "n": 23921,
+          "pct_empregado": 0.7289998613133828,
+          "ic_inf": 0.7229855387396203,
+          "ic_sup": 0.7346078474657411,
+          "pct_so_estudante": 0.010188998028409292,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2025,
+          "faixa_exp": "≤2",
+          "metodo": "workexp_igual_2",
+          "n": 2408,
+          "pct_empregado": 0.6877076411960132,
+          "ic_inf": 0.6690199335548173,
+          "ic_sup": 0.7059800664451827,
+          "pct_so_estudante": 0.1719269102990033,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2025,
+          "faixa_exp": "≥10",
+          "metodo": "workexp_igual_2",
+          "n": 23921,
+          "pct_empregado": 0.7469587391831445,
+          "ic_inf": 0.7410632916684086,
+          "ic_sup": 0.7523943397015175,
           "pct_so_estudante": 0.004514861418837005,
           "usar_na_inferencia": true
         },
         {
           "ano": 2026,
           "faixa_exp": "≤2",
+          "metodo": "bruto",
           "n": 3464,
           "pct_empregado": 0.4237875288683603,
-          "ic_inf": 0.4073325635103926,
-          "ic_sup": 0.44024249422632794,
+          "ic_inf": 0.407621247113164,
+          "ic_sup": 0.4408198614318707,
           "pct_so_estudante": 0.3565242494226328,
           "usar_na_inferencia": true
         },
         {
           "ano": 2026,
           "faixa_exp": "≥10",
+          "metodo": "bruto",
           "n": 14476,
           "pct_empregado": 0.7283089251174357,
-          "ic_inf": 0.7207774937828129,
-          "ic_sup": 0.7351512848853274,
+          "ic_inf": 0.7211902459242885,
+          "ic_sup": 0.7354258773141752,
+          "pct_so_estudante": 0.0034539928156949434,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2026,
+          "faixa_exp": "≤2",
+          "metodo": "ipw",
+          "n": 3464,
+          "pct_empregado": 0.3330538162271805,
+          "ic_inf": 0.3182339182177745,
+          "ic_sup": 0.348669057472975,
+          "pct_so_estudante": 0.4608406403602005,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2026,
+          "faixa_exp": "≥10",
+          "metodo": "ipw",
+          "n": 14476,
+          "pct_empregado": 0.7118191480842861,
+          "ic_inf": 0.7041434987158938,
+          "ic_sup": 0.7193195578922319,
+          "pct_so_estudante": 0.0055522743750196345,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2026,
+          "faixa_exp": "≤2",
+          "metodo": "workexp_igual_2",
+          "n": 1204,
+          "pct_empregado": 0.6013289036544851,
+          "ic_inf": 0.5739202657807309,
+          "ic_sup": 0.627906976744186,
+          "pct_so_estudante": 0.2026578073089701,
+          "usar_na_inferencia": true
+        },
+        {
+          "ano": 2026,
+          "faixa_exp": "≥10",
+          "metodo": "workexp_igual_2",
+          "n": 14476,
+          "pct_empregado": 0.7283089251174357,
+          "ic_inf": 0.7211902459242885,
+          "ic_sup": 0.7354258773141752,
           "pct_so_estudante": 0.0034539928156949434,
           "usar_na_inferencia": true
         }
       ]
     },
-    "explicacao": "Entre quem tem ≤2 anos, a fração empregada foi de 62% (2025) para 42% (2026), variação -19.8% [IC -21.9%; -17.7%]; só 2025→2026 é comparável e a composição da amostra muda (mais estudantes), então é associação, não causa."
+    "explicacao": "Entre quem tem ≤2 anos, a fração empregada caiu de 2025 para 2026 entre -19.8% e -8.6% conforme o método (bruto, reponderado pela taxa de resposta do WorkExp, só WorkExp = 2); como quem responde a experiência difere por situação de emprego e a amostra de 2026 tem mais estudantes, há viés de seleção possível e o resultado é associação, não causa."
   },
   "H2": {
     "veredito": "parcial",
@@ -177,9 +339,13 @@
     "veredito": "parcial",
     "evidencias": {
       "gap_salarial_cresce": true,
-      "senior_usa_mais_agentes_em_todos_os_anos": false,
+      "extra_fora_do_design_senior_usa_mais_agentes_em_cada_ano": false,
       "classificador_interpretavel_e_exp_agentes_reduzem_ameaca": false
     },
+    "notas": [
+      "O critério 'extra_fora_do_design_senior_usa_mais_agentes_em_cada_ano' NÃO está no design (§7); foi acrescentado nesta análise. Sem ele, o veredito continua 'parcial' (gap passa, classificador não).",
+      "usa_agentes muda de definição: 2025 = pergunta AIAgents; 2026 = opção 'AI agents or automated workflows' dentro do AISelect multi-seleção. Por isso só se compara ≥10 vs ≤2 dentro de cada ano, nunca 2025 vs 2026."
+    ],
     "numeros": {
       "gap_salarial": {
         "anos": [
@@ -211,15 +377,15 @@
         "ano": 2025,
         "n": 36078,
         "melhor_modelo": "logistica",
-        "delta_auc_melhor_vs_dummy": 0.10864262571146877,
+        "delta_auc_melhor_vs_dummy": 0.10924423838835928,
         "interpretavel": true,
         "auc_holdout": 0.6032530335088087
       },
       "auc_cv": {
         "dummy": 0.5,
-        "logistica_so_faixa_exp": 0.5170553171329944,
-        "logistica": 0.6086426257114688,
-        "hgb": 0.6011404684445114
+        "logistica_so_faixa_exp": 0.5128143797408117,
+        "logistica": 0.6092442383883593,
+        "hgb": 0.6039174241932648
       },
       "taxa_ameaca": {
         "por_faixa_exp": {

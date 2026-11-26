@@ -1,7 +1,5 @@
 {
   "ano": 2025,
-  "n": 36078,
-  "prevalencia_ameaca": 0.15023005709850878,
   "mapeamento_alvo": {
     "Yes": 1,
     "No": 0,
@@ -16,7 +14,11 @@
     "emprego"
   ],
   "tratamento_features": "categóricas one-hot; cargo = 1º item listado, cargo/pais/emprego top 10 + Outros; nulos = 'NA'",
-  "cv": "StratifiedKFold(5, shuffle, seed)",
+  "cv": "split 80/20 estratificado; StratifiedKFold(5, shuffle, seed) só no treino; modelo escolhido pela AUC de CV no treino",
+  "regra": "interpretável se AUC(melhor) − AUC(dummy) >= 0,03 (design §7.1)",
+  "n_usa_agentes_na": 4694,
+  "n": 36078,
+  "prevalencia_ameaca": 0.15023005709850878,
   "metricas": {
     "dummy": {
       "auc_media": 0.5,
@@ -25,29 +27,28 @@
       "f1_dp": 0.0
     },
     "logistica_so_faixa_exp": {
-      "auc_media": 0.5170553171329944,
-      "auc_dp": 0.01202418132708532,
-      "f1_media": 0.17446596923580102,
-      "f1_dp": 0.025608571692748838
+      "auc_media": 0.5128143797408117,
+      "auc_dp": 0.007737621099081532,
+      "f1_media": 0.16189227803565215,
+      "f1_dp": 0.030946149354268628
     },
     "logistica": {
-      "auc_media": 0.6086426257114688,
-      "auc_dp": 0.009640196572153604,
-      "f1_media": 0.29066133351137524,
-      "f1_dp": 0.0076056195564186265
+      "auc_media": 0.6092442383883593,
+      "auc_dp": 0.010111884695015798,
+      "f1_media": 0.2923542079784535,
+      "f1_dp": 0.004618585985733595
     },
     "hgb": {
-      "auc_media": 0.6011404684445114,
-      "auc_dp": 0.008678148838072016,
-      "f1_media": 0.28807551539618875,
-      "f1_dp": 0.006292011863053578
+      "auc_media": 0.6039174241932648,
+      "auc_dp": 0.007763398374033138,
+      "f1_media": 0.2920984679967713,
+      "f1_dp": 0.004191493863995129
     }
   },
   "melhor_modelo": "logistica",
-  "delta_auc_melhor_vs_dummy": 0.10864262571146877,
-  "delta_auc_hgb_vs_logistica": -0.007502157266957354,
-  "delta_auc_melhor_vs_logistica_so_faixa_exp": 0.09158730857847441,
-  "regra": "interpretável se AUC(melhor) − AUC(dummy) >= 0,03 (design §7.1)",
+  "delta_auc_melhor_vs_dummy": 0.10924423838835928,
+  "delta_auc_hgb_vs_logistica": -0.005326814195094509,
+  "delta_auc_melhor_vs_logistica_so_faixa_exp": 0.0964298586475476,
   "interpretavel": true,
   "importancias_holdout": [
     {
@@ -82,6 +83,74 @@
     }
   ],
   "auc_holdout": 0.6032530335088087,
+  "sensibilidade_sem_na_usa_agentes": {
+    "n": 31384,
+    "prevalencia_ameaca": 0.14201503951057864,
+    "metricas": {
+      "dummy": {
+        "auc_media": 0.5,
+        "auc_dp": 0.0,
+        "f1_media": 0.0,
+        "f1_dp": 0.0
+      },
+      "logistica_so_faixa_exp": {
+        "auc_media": 0.5127182722370012,
+        "auc_dp": 0.010322709170314278,
+        "f1_media": 0.16608866483393075,
+        "f1_dp": 0.05238868706975516
+      },
+      "logistica": {
+        "auc_media": 0.6038004720152049,
+        "auc_dp": 0.0063036427336971785,
+        "f1_media": 0.27683146364313227,
+        "f1_dp": 0.0053620743413710665
+      },
+      "hgb": {
+        "auc_media": 0.5878509109876578,
+        "auc_dp": 0.006615745419821884,
+        "f1_media": 0.2722830749150078,
+        "f1_dp": 0.008184560047807085
+      }
+    },
+    "melhor_modelo": "logistica",
+    "delta_auc_melhor_vs_dummy": 0.10380047201520493,
+    "delta_auc_hgb_vs_logistica": -0.015949561027547077,
+    "delta_auc_melhor_vs_logistica_so_faixa_exp": 0.09108219977820375,
+    "interpretavel": true,
+    "importancias_holdout": [
+      {
+        "feature": "emprego",
+        "importancia_media": 0.029613813590791006,
+        "importancia_dp": 0.004636295017861295
+      },
+      {
+        "feature": "usa_agentes",
+        "importancia_media": 0.029516479312246168,
+        "importancia_dp": 0.0037284503027501165
+      },
+      {
+        "feature": "pais",
+        "importancia_media": 0.024434019195128286,
+        "importancia_dp": 0.004105157573274173
+      },
+      {
+        "feature": "ia_usa",
+        "importancia_media": 0.005891974579312176,
+        "importancia_dp": 0.002360787374369605
+      },
+      {
+        "feature": "cargo",
+        "importancia_media": 0.005728563015974864,
+        "importancia_dp": 0.0025431033660005156
+      },
+      {
+        "feature": "faixa_exp",
+        "importancia_media": 0.0037435876277317594,
+        "importancia_dp": 0.0009609879396584223
+      }
+    ],
+    "auc_holdout": 0.6041863325252359
+  },
   "taxas_descritivas": {
     "por_faixa_exp": {
       "≤2": {

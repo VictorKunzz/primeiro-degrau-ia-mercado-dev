@@ -65,3 +65,4 @@ def test_2025_aiagents_e_workexp_unico():
 def test_comparavel_cobre_todas_as_colunas():
     from src.etl.survey import COMPARAVEL
     assert set(COMPARAVEL) == set(COLUNAS_FINAIS) - {"ano"}
+    assert {2025, 2026} <= set(COMPARAVEL["emprego"])

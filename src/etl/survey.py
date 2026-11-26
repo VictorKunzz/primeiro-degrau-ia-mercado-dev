@@ -17,6 +17,8 @@ Decisões de harmonização (schema real conferido nos cabeçalhos de cada ano):
   "Student, full-time"); em 2025/26, "Employed" (que
   mistura integral e parcial) conta como True. NaN se Employment ausente.
   Cuidado: essa flag NÃO é estritamente comparável entre 2024 e 2025.
+  O texto de `emprego` é comparável dentro de 2023-24 e dentro de 2025-26 (6 opções
+  idênticas de seleção única), não entre os dois blocos.
 - salario_usd: ConvertedCompYearly; fora de [1.000; 1.000.000] USD vira NaN (piso de
   1.000 USD aprovado: valores menores são ruído).
 - COMPARAVEL: por coluna, anos em que o significado é idêntico (ver dicionário abaixo).
@@ -85,7 +87,9 @@ _TODOS = [2023, 2024, 2025, 2026]
 COMPARAVEL: dict[str, list[int]] = {
     "anos_exp": _TODOS, "anos_exp_fonte": _TODOS, "faixa_exp": _TODOS,
     "cargo": [2023, 2024, 2025],
-    "emprego": [2023, 2024],
+    # emprego: comparável DENTRO de 2023-24 (multi-seleção) e DENTRO de 2025-26 (6 opções
+    # de seleção única, idênticas), mas NÃO entre 2024 e 2025.
+    "emprego": [2023, 2024, 2025, 2026],
     "empregado": _TODOS,
     "empregado_integral": [2023, 2024],
     "salario_usd": _TODOS, "pais": _TODOS,

@@ -51,35 +51,76 @@ def _diff(a, b, func=np.mean, seed=SEED):
     return ba, bb, ic_de(ba - bb, func(np.asarray(a, float)) - func(np.asarray(b, float)))
 
 
+METODOS_H1 = {
+    "bruto": "% empregado entre quem respondeu WorkExp na faixa (sem correção).",
+    "ipw": ("Reponderado por 1/P(responder WorkExp | ano, categoria de Employment): corrige a "
+            "diferença de taxa de resposta (ex.: Employed 95,5%->84,9%, Student 41,3%->51,6%)."),
+    "workexp_igual_2": ("Só WorkExp == 2 na faixa júnior (em 2026 as respostas se amontoam em 1 ano); "
+                        "comparação com ≥10 bruto."),
+}
+
+
+def _boot_wmean(y, w, seed, n=N_BOOT):
+    y, w = np.asarray(y, float), np.asarray(w, float)
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(y), (n, len(y))) if len(y) * n <= 1e7 else None
+    if idx is not None:
+        return (y[idx] * w[idx]).sum(1) / w[idx].sum(1)
+    out = np.empty(n)
+    for b in range(n):
+        k = rng.integers(0, len(y), len(y))
+        out[b] = (y[k] * w[k]).sum() / w[k].sum()
+    return out
+
+
+def _pesos_ipw(df):
+    """1/P(anos_exp não nulo | ano, emprego), estimado sobre todos os respondentes do ano."""
+    grupo = df["emprego"].fillna("NA")
+    p = df["anos_exp"].notna().groupby([df["ano"], grupo]).transform("mean")
+    return 1.0 / p
+
+
 def emprego_iniciantes(df):
-    linhas, boots = [], {}
+    df = df.assign(_w=_pesos_ipw(df), _emp=df["emprego"].fillna("NA"))
+    linhas, boots, est = [], {}, {}
+
+    def sub(ano, faixa, metodo):
+        d = df[(df.ano == ano) & (df.faixa_exp == faixa) & df.empregado.notna()]
+        if metodo == "workexp_igual_2":
+            d = d[d.anos_exp == 2] if faixa == JR else d
+        w = d["_w"] if metodo == "ipw" else pd.Series(1.0, index=d.index)
+        return d, w
+
     for ano in (2024, 2025, 2026):
         assert ano in COMPARAVEL["empregado"]
-        for faixa in (JR, SR):
-            s = df.loc[(df.ano == ano) & (df.faixa_exp == faixa), "empregado"].dropna().astype(float)
-            est, lo, hi = bootstrap_ic(s, np.mean, N_BOOT, SEED)
-            boots[(ano, faixa)] = bootstrap_amostras(s, np.mean, N_BOOT, SEED + ano)
-            pct_est = df.loc[(df.ano == ano) & (df.faixa_exp == faixa), "emprego"].eq("Student").mean() \
-                if ano >= 2025 else np.nan
-            linhas.append({"ano": ano, "faixa_exp": faixa, "n": len(s), "pct_empregado": est,
-                           "ic_inf": lo, "ic_sup": hi, "pct_so_estudante": pct_est,
-                           "usar_na_inferencia": ano in ANOS_EMPREGO_VALIDOS,
-                           "nota": NOTA_EMPREGO[ano]})
+        metodos = ["bruto"] if ano not in ANOS_EMPREGO_VALIDOS else list(METODOS_H1)
+        for metodo in metodos:
+            for faixa in (JR, SR):
+                d, w = sub(ano, faixa, metodo)
+                y = d.empregado.astype(float)
+                b = _boot_wmean(y, w, SEED + ano + (0 if faixa == JR else 7))
+                e = float((y * w).sum() / w.sum())
+                boots[(metodo, ano, faixa)], est[(metodo, ano, faixa)] = b, e
+                pct_est = float(((d._emp == "Student") * w).sum() / w.sum()) if ano >= 2025 else np.nan
+                linhas.append({"ano": ano, "faixa_exp": faixa, "metodo": metodo, "n": len(d),
+                               "pct_empregado": e, "ic_inf": np.percentile(b, 2.5), "ic_sup": np.percentile(b, 97.5),
+                               "pct_so_estudante": pct_est, "usar_na_inferencia": ano in ANOS_EMPREGO_VALIDOS,
+                               "nota": NOTA_EMPREGO[ano] + " Método: " + METODOS_H1[metodo]})
     tab = pd.DataFrame(linhas)
     a0, a1 = ANOS_EMPREGO_VALIDOS
-    g = tab.set_index(["ano", "faixa_exp"])["pct_empregado"]
-    d_jr = boots[(a1, JR)] - boots[(a0, JR)]
-    d_sr = boots[(a1, SR)] - boots[(a0, SR)]
-    est_jr = g[(a1, JR)] - g[(a0, JR)]
-    est_sr = g[(a1, SR)] - g[(a0, SR)]
-    res = {
-        "anos": [a0, a1],
-        "variacao_jr": _ic(*ic_de(d_jr, est_jr)),
-        "variacao_sr": _ic(*ic_de(d_sr, est_sr)),
-        "dif_em_dif_jr_menos_sr": _ic(*ic_de(d_jr - d_sr, est_jr - est_sr)),
-    }
-    # Robustez (não entra no veredito): exclui quem se declara só "Student",
-    # pois a fração de estudantes entre ≤2 sobe de 2025 para 2026.
+    res = {"anos": [a0, a1], "metodos": {}}
+    for metodo in METODOS_H1:
+        dj = boots[(metodo, a1, JR)] - boots[(metodo, a0, JR)]
+        ds = boots[(metodo, a1, SR)] - boots[(metodo, a0, SR)]
+        ej = est[(metodo, a1, JR)] - est[(metodo, a0, JR)]
+        es = est[(metodo, a1, SR)] - est[(metodo, a0, SR)]
+        res["metodos"][metodo] = {
+            "descricao": METODOS_H1[metodo],
+            "pct_jr": {str(a0): est[(metodo, a0, JR)], str(a1): est[(metodo, a1, JR)]},
+            "variacao_jr": _ic(*ic_de(dj, ej)), "variacao_sr": _ic(*ic_de(ds, es)),
+            "dif_em_dif_jr_menos_sr": _ic(*ic_de(dj - ds, ej - es)),
+        }
+    # Robustez extra (não entra no veredito): exclui quem se declara só "Student".
     sem_est = df[(df.faixa_exp == JR) & (df.emprego != "Student")]
     s0 = sem_est.loc[sem_est.ano == a0, "empregado"].dropna().astype(float)
     s1 = sem_est.loc[sem_est.ano == a1, "empregado"].dropna().astype(float)
@@ -197,10 +238,13 @@ def main():
     be_tab.to_csv(RESULTS / "break_even.csv", index=False)
 
     # ---------- vereditos ----------
-    h1_ev = {
-        "queda_emprego_jr": emp["variacao_jr"]["ic_sup"] < 0,
-        "queda_jr_maior_que_sr": emp["dif_em_dif_jr_menos_sr"]["ic_sup"] < 0,
-    }
+    # H1: confirmada só se, nos 3 métodos, a queda do júnior E a dif-em-dif tiverem IC < 0.
+    h1_ev = {}
+    for metodo, m in emp["metodos"].items():
+        h1_ev[f"queda_jr_{metodo}"] = m["variacao_jr"]["ic_sup"] < 0
+        h1_ev[f"dif_em_dif_{metodo}"] = m["dif_em_dif_jr_menos_sr"]["ic_sup"] < 0
+    efeitos = [m["variacao_jr"]["estimativa"] for m in emp["metodos"].values()]
+    h1_ok = [all(h1_ev[f"{k}_{metodo}"] for k in ("queda_jr", "dif_em_dif")) for metodo in emp["metodos"]]
     central = be_tab[be_tab.principal & (be_tab.cenario == "central")]
     h2_ev = {
         # u* (IC bootstrap dos salários) abaixo do ganho central de 15% com prod_jr = 0,5
@@ -211,22 +255,22 @@ def main():
     td = clf["taxas_descritivas"]
     h3_ev = {
         "gap_salarial_cresce": gap["variacao_razao"]["ic_inf"] > 0,
-        "senior_usa_mais_agentes_em_todos_os_anos": all(v["ic_inf"] > 0 for v in ag.values()),
+        "extra_fora_do_design_senior_usa_mais_agentes_em_cada_ano": all(v["ic_inf"] > 0 for v in ag.values()),
         "classificador_interpretavel_e_exp_agentes_reduzem_ameaca": bool(
             clf["interpretavel"] and td["dif_sr_menos_jr"]["ic_sup"] < 0
             and td["dif_agentes_sim_menos_nao"]["ic_sup"] < 0),
     }
-    a0, a1 = emp["anos"]
-    vj = emp["variacao_jr"]
     vereditos = {
         "regras": "design §7.1: IC 95% bootstrap não cruza zero; confirmada = todas passam, parcial = algumas, não sustentada = nenhuma.",
         "H1_survey": {
-            "veredito": veredito(list(h1_ev.values())), "evidencias": h1_ev,
+            "veredito": veredito(h1_ok), "evidencias": h1_ev,
+            "regra": "confirmada se nos 3 métodos (bruto, ipw, workexp_igual_2) a queda do júnior e a dif-em-dif têm IC 95% < 0; parcial se em alguns.",
+            "faixa_efeito_jr": {"min": min(efeitos), "max": max(efeitos)},
             "numeros": {"emprego": emp, "tabela": emp_tab.drop(columns="nota").to_dict(orient="records")},
-            "explicacao": (f"Entre quem tem ≤2 anos, a fração empregada foi de {emp_tab.set_index(['ano','faixa_exp']).loc[(a0, JR),'pct_empregado']:.0%} "
-                           f"({a0}) para {emp_tab.set_index(['ano','faixa_exp']).loc[(a1, JR),'pct_empregado']:.0%} ({a1}), "
-                           f"variação {vj['estimativa']:+.1%} [IC {vj['ic_inf']:+.1%}; {vj['ic_sup']:+.1%}]; "
-                           "só 2025→2026 é comparável e a composição da amostra muda (mais estudantes), então é associação, não causa."),
+            "explicacao": (f"Entre quem tem ≤2 anos, a fração empregada caiu de {emp['anos'][0]} para {emp['anos'][1]} "
+                           f"entre {min(efeitos):+.1%} e {max(efeitos):+.1%} conforme o método (bruto, reponderado pela taxa de "
+                           "resposta do WorkExp, só WorkExp = 2); como quem responde a experiência difere por situação de emprego "
+                           "e a amostra de 2026 tem mais estudantes, há viés de seleção possível e o resultado é associação, não causa."),
         },
         "H2": {
             "veredito": veredito(list(h2_ev.values())), "evidencias": h2_ev,
@@ -239,6 +283,12 @@ def main():
         },
         "H3": {
             "veredito": veredito(list(h3_ev.values())), "evidencias": h3_ev,
+            "notas": [
+                "O critério 'extra_fora_do_design_senior_usa_mais_agentes_em_cada_ano' NÃO está no design (§7); foi "
+                "acrescentado nesta análise. Sem ele, o veredito continua 'parcial' (gap passa, classificador não).",
+                "usa_agentes muda de definição: 2025 = pergunta AIAgents; 2026 = opção 'AI agents or automated workflows' "
+                "dentro do AISelect multi-seleção. Por isso só se compara ≥10 vs ≤2 dentro de cada ano, nunca 2025 vs 2026.",
+            ],
             "numeros": {"gap_salarial": gap, "agentes_sr_menos_jr_por_ano": ag,
                         "classificador": {k: clf[k] for k in ("ano", "n", "melhor_modelo", "delta_auc_melhor_vs_dummy",
                                                               "interpretavel", "auc_holdout")},
