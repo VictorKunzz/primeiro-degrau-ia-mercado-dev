@@ -22,12 +22,18 @@ AZUL, LARANJA, CINZA, TEXTO2 = "#2a78d6", "#eb6834", "#b9b8b2", "#52514e"
 CORES_ONDA = {"chat": "#8a8984", "assistente": "#6250d6", "agente": "#e34948"}
 REPO = "https://github.com/VictorKunzz/primeiro-degrau-ia-mercado-dev"
 
-st.set_page_config(page_title="O Primeiro Degrau", page_icon="🪜", layout="wide")
+st.set_page_config(page_title="O Primeiro Degrau", page_icon=":material/stairs:", layout="wide")
 
 
 def brl(v: float, casas: int = 0) -> str:
     s = f"{v:,.{casas}f}"
     return s.replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def nota(texto: str) -> None:
+    """Destaque neutro: caixa com borda fina, sem cor de status."""
+    with st.container(border=True):
+        st.markdown(texto)
 
 
 def pct(v: float, casas: int = 1, sinal: bool = False) -> str:
@@ -52,12 +58,12 @@ def carregar():
 so, cf, tags, marcos, emp, gap, be, vagas, vs, vv = carregar()
 base_be = be[be["principal"]].iloc[0]
 
-st.title("🪜 O Primeiro Degrau")
+st.title("O Primeiro Degrau")
 st.caption("A IA generativa está tirando o primeiro degrau da carreira em software? "
            f"Painel interativo do trabalho de Data Storytelling · [repositório]({REPO})")
 
 aba_gestor, aba_so, aba_degrau, aba_vagas = st.tabs(
-    ["💼 Conta do gestor", "📉 Stack Overflow", "🎓 Primeiro degrau", "📊 Vagas e juros"])
+    [":material/calculate: Conta do gestor", ":material/forum: Stack Overflow", ":material/school: Primeiro degrau", ":material/work: Vagas e juros"])
 
 # ---------------------------------------------------------------- gestor
 with aba_gestor:
@@ -86,12 +92,12 @@ with aba_gestor:
         m1, m2, m3 = st.columns(3)
         m1.metric("Sênior + júnior", f"US$ {brl(custo_a)}", help="custo por unidade de trabalho")
         m2.metric("Sênior + IA", f"US$ {brl(custo_b)}", delta=f"{pct(custo_b / custo_a - 1, sinal=True)} vs. com júnior",
-                  delta_color="inverse")
+                  delta_color="off")
         m3.metric("Ganho que empata", pct(u_star, sinal=True), help="Abaixo disso, manter o júnior sai mais barato.")
         if compensa:
-            st.success(f"✅ Com +{pct(ganho)} de ganho, **sênior + IA compensa**: o empate está em {pct(u_star, sinal=True)}.")
+            nota(f"Com +{pct(ganho)} de ganho, **sênior + IA compensa**: o empate está em {pct(u_star, sinal=True)}.")
         else:
-            st.warning(f"⚖️ Com {pct(ganho, sinal=True)} de ganho, **manter o júnior ainda compensa**: "
+            nota(f"Com {pct(ganho, sinal=True)} de ganho, **manter o júnior ainda compensa**: "
                        f"a IA precisaria render {pct(u_star, sinal=True)}.")
         xs = pd.DataFrame({"ganho": [x / 100 for x in range(-30, 61)]})
         xs["Sênior + IA"] = (sal_sr + custo_ia_ano) / (1 + xs["ganho"])
@@ -146,7 +152,7 @@ with aba_so:
                     x="data:T", tooltip=["marco:N", "onda:N", alt.Tooltip("data:T", format="%d/%m/%Y")]))
         st.altair_chart(alt.layer(*camadas).properties(height=380), use_container_width=True)
     a1 = vs["ato1_stackoverflow"]
-    st.info(f"**Veredito pela regra pré-definida: {a1['veredito']}.** {a1.get('leitura', '')}")
+    nota(f"**Veredito pela regra pré-definida: {a1['veredito']}.** {a1.get('leitura', '')}")
     t = tags.assign(serie=tags.tag.map(nomes))[["serie", "efeito_pct_12m", "efeito_pct_medio", "efeito_pct_ultimo_mes"]]
     t.columns = ["Linguagem", "Efeito 1º ano (%)", "Efeito médio 48 meses (%)", "Último mês (%)"]
     st.dataframe(t.round(1), hide_index=True, use_container_width=True)
@@ -174,8 +180,8 @@ with aba_degrau:
     c1.altair_chart((barras + erro).properties(height=340), use_container_width=True)
     jr = e[e.grupo == "até 2 anos"].set_index("ano").pct_empregado
     sr = e[e.grupo == "10 anos ou mais"].set_index("ano").pct_empregado
-    c2.metric("Até 2 anos, 2025 → 2026", pct(jr["2026"]), delta=f"{(jr['2026'] - jr['2025']) * 100:+.1f} p.p.".replace(".", ","))
-    c2.metric("10 anos ou mais, 2025 → 2026", pct(sr["2026"]), delta=f"{(sr['2026'] - sr['2025']) * 100:+.1f} p.p.".replace(".", ","))
+    c2.metric("Até 2 anos, 2025 → 2026", pct(jr["2026"]), delta=f"{(jr['2026'] - jr['2025']) * 100:+.1f} p.p.".replace(".", ","), delta_color="off")
+    c2.metric("10 anos ou mais, 2025 → 2026", pct(sr["2026"]), delta=f"{(sr['2026'] - sr['2025']) * 100:+.1f} p.p.".replace(".", ","), delta_color="off")
     c2.caption("Pessoas diferentes em cada ano (pesquisa voluntária): é associação, não acompanhamento de indivíduos. "
                "2023 e 2024 ficam de fora por viés de seleção na pergunta de experiência.")
     st.markdown("#### E quem fica, ganha cada vez mais que o iniciante")
@@ -203,7 +209,7 @@ with aba_vagas:
     st.altair_chart(alt.vconcat(ch.properties(height=300), juros.properties(height=120)).resolve_scale(x="shared"),
                     use_container_width=True)
     a2 = vs["ato2_vagas"]
-    st.info(f"**Veredito: {a2['veredito']}.** {a2.get('explicacao', '')}")
+    nota(f"**Veredito: {a2['veredito']}.** {a2.get('explicacao', '')}")
 
 st.divider()
 st.caption("Fontes: Stack Exchange API · Stack Overflow Developer Survey 2023–2026 · Indeed Hiring Lab · "
