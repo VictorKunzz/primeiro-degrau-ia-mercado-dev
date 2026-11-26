@@ -30,10 +30,20 @@ def brl(v: float, casas: int = 0) -> str:
     return s.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def nota(texto: str) -> None:
-    """Destaque neutro: caixa com borda fina, sem cor de status."""
-    with st.container(border=True):
-        st.markdown(texto)
+TONS = {"positivo": "#1a7f4b", "alerta": "#b45d1f", "info": "#2a78d6", "neutro": "#6b6a65"}
+
+
+def nota(texto: str, tom: str = "info", rotulo: str = "Veredito") -> None:
+    """Anotação editorial: filete de cor à esquerda, rótulo em versalete na mesma cor, texto em tinta normal."""
+    import html
+    import re
+    cor = TONS[tom]
+    corpo = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html.escape(texto))
+    st.markdown(
+        f"""<div style="border-left:3px solid {cor};padding:2px 0 2px 14px;margin:6px 0 14px 0;">
+<div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:{cor};margin-bottom:2px;">{html.escape(rotulo)}</div>
+<div style="font-size:0.95rem;line-height:1.5;color:inherit;">{corpo}</div></div>""",
+        unsafe_allow_html=True)
 
 
 def pct(v: float, casas: int = 1, sinal: bool = False) -> str:
@@ -95,10 +105,10 @@ with aba_gestor:
                   delta_color="off")
         m3.metric("Ganho que empata", pct(u_star, sinal=True), help="Abaixo disso, manter o júnior sai mais barato.")
         if compensa:
-            nota(f"Com +{pct(ganho)} de ganho, **sênior + IA compensa**: o empate está em {pct(u_star, sinal=True)}.")
+            nota(f"Com +{pct(ganho)} de ganho, **sênior + IA compensa**: o empate está em {pct(u_star, sinal=True)}.", "positivo", "Resultado da simulação")
         else:
             nota(f"Com {pct(ganho, sinal=True)} de ganho, **manter o júnior ainda compensa**: "
-                       f"a IA precisaria render {pct(u_star, sinal=True)}.")
+                       f"a IA precisaria render {pct(u_star, sinal=True)}.", "alerta", "Resultado da simulação")
         xs = pd.DataFrame({"ganho": [x / 100 for x in range(-30, 61)]})
         xs["Sênior + IA"] = (sal_sr + custo_ia_ano) / (1 + xs["ganho"])
         xs["Sênior + júnior"] = custo_a
@@ -152,7 +162,7 @@ with aba_so:
                     x="data:T", tooltip=["marco:N", "onda:N", alt.Tooltip("data:T", format="%d/%m/%Y")]))
         st.altair_chart(alt.layer(*camadas).properties(height=380), use_container_width=True)
     a1 = vs["ato1_stackoverflow"]
-    nota(f"**Veredito pela regra pré-definida: {a1['veredito']}.** {a1.get('leitura', '')}")
+    nota(f"**{a1['veredito'].capitalize()}.** {a1.get('leitura', '')}", "info", "Veredito pela regra definida antes")
     t = tags.assign(serie=tags.tag.map(nomes))[["serie", "efeito_pct_12m", "efeito_pct_medio", "efeito_pct_ultimo_mes"]]
     t.columns = ["Linguagem", "Efeito 1º ano (%)", "Efeito médio 48 meses (%)", "Último mês (%)"]
     st.dataframe(t.round(1), hide_index=True, use_container_width=True)
@@ -209,7 +219,7 @@ with aba_vagas:
     st.altair_chart(alt.vconcat(ch.properties(height=300), juros.properties(height=120)).resolve_scale(x="shared"),
                     use_container_width=True)
     a2 = vs["ato2_vagas"]
-    nota(f"**Veredito: {a2['veredito']}.** {a2.get('explicacao', '')}")
+    nota(f"**{a2['veredito'].capitalize()}.** {a2.get('explicacao', '')}", "info", "Veredito")
 
 st.divider()
 st.caption("Fontes: Stack Exchange API · Stack Overflow Developer Survey 2023–2026 · Indeed Hiring Lab · "
