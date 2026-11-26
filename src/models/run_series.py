@@ -8,8 +8,9 @@ Regras de veredito (design §7.1), fixadas antes de ler os resultados:
   efeito real E o backtest do pré-período bater o baseline sazonal ingênuo (MAPE menor).
   Senão "inconclusivo".
   Leitura usada para "efeito real" na comparação com placebos (que avaliam só 12 meses):
-  exigimos as duas comparações — contra o efeito médio dos primeiros 12 meses pós-corte
-  (comparação de mesmo horizonte, a mais exigente) e contra o efeito médio do período todo.
+  o efeito médio dos primeiros 12 meses pós-corte (mesmo horizonte; fixada antes de rodar e
+  confirmada pelo controlador). A comparação com o período todo vai no JSON como leitura
+  secundária, não usada no veredito.
   Backtest: MAPE médio do modelo < MAPE médio do ingênuo nas origens.
 - Ato 2: "consistente com IA" só se software cair mais que a mediana dos setores depois de
   controlar FEDFUNDS (coeficiente da dummy pós-ChatGPT < 0) e p < 0,05 (HAC). Senão
@@ -29,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import CORTE_PRE_IA, PROCESSED, RESULTS
-from src.models.series import (backtest, contrafactual, efeito, its_segmentado, placebos,
+from src.models.series import (_ols_hac, backtest, contrafactual, efeito, its_segmentado, placebos,
                                vagas_vs_setores)
 
 INICIO_TOTAL = pd.Timestamp("2014-01-01")
@@ -37,6 +38,17 @@ INICIO_SENSIBILIDADE = pd.Timestamp("2012-01-01")
 INICIO_TAGS = pd.Timestamp("2015-01-01")
 INTERVENCAO = pd.Timestamp("2022-12-01")  # primeiro mês inteiro após o ChatGPT (30/11/2022)
 DATAS_PLACEBO = ["2019-06-01", "2020-06-01"]
+LIMITACOES = [
+    "O Stack Overflow mede demanda por perguntas no site, não o 'primeiro degrau' da carreira; a queda também "
+    "tem causas fora do mercado de trabalho (chatbots substituindo o Q&A, política de moderação, perguntas "
+    "apagadas que não aparecem na API).",
+    "O pré-período inclui o pico da COVID (2020): ele gera o placebo de 2020-06 (reversão do pico) e a pior "
+    "origem do backtest.",
+    "A ordem do SARIMAX é escolhida por AIC entre modelos com e sem diferença sazonal (D=0 vs. D=1); AICs com "
+    "diferenciações diferentes não são estritamente comparáveis.",
+    "Vagas (Indeed) só existem desde 2020-02: o pré-período tem 34 meses e é dominado pelo boom de software de "
+    "2021–22; FEDFUNDS e a dummy pós-ChatGPT são colineares e um único juro é controle grosseiro do ciclo.",
+]
 
 
 def _serie(so: pd.DataFrame, tag: str) -> pd.Series:
@@ -98,7 +110,7 @@ def ato1(so: pd.DataFrame) -> dict:
     mape_m, mape_i = float(bt.mape_modelo.mean()), float(bt.mape_ingenuo.mean())
     max_placebo = float(pl.efeito_pct_medio.abs().max())
     c_sust = e["sustentado"] and e["efeito_pct_medio"] < 0
-    c_plac = max_placebo < 0.5 * abs(e12["efeito_pct_medio"]) and max_placebo < 0.5 * abs(e["efeito_pct_medio"])
+    c_plac = max_placebo < 0.5 * abs(e12["efeito_pct_medio"])  # mesmo horizonte (12 meses) dos placebos
     c_bt = mape_m < mape_i
     ok = bool(c_sust and c_plac and c_bt)
     veredito = "efeito sustentado" if ok else "inconclusivo"
@@ -110,8 +122,28 @@ def ato1(so: pd.DataFrame) -> dict:
         falhas = [n for n, c in [("sequência abaixo do IC", c_sust), ("placebos", c_plac),
                                  ("backtest vs. ingênuo", c_bt)] if not c]
         expl = f"Inconclusivo: falhou(aram) {', '.join(falhas)} (regra §7.1)."
+    leitura = (
+        f"Nos primeiros 12 meses a queda ({e12['efeito_pct_medio']:.0f}%) não se distingue do placebo de "
+        f"reversão da COVID (corte falso 2020-06: {pl.efeito_pct_medio.iloc[pl.corte_falso.tolist().index('2020-06-01')]:.0f}%). "
+        f"Em 48 meses a divergência ({e['efeito_pct_medio']:.0f}% em média, {e['meses_abaixo_ic_seguidos']} meses "
+        f"seguidos abaixo do IC 95%, {e['efeito_pct_ultimo_mes']:.0f}% no último mês) não tem análogo placebo de "
+        "duração parecida, mas a regra de 12 meses não testa isso.")
+    secundaria = {
+        "rotulo": "secundária, não usada no veredito",
+        "descricao": "placebo comparado ao efeito médio do período pós-corte inteiro (48 meses)",
+        "efeito_real_periodo_todo_pct": e["efeito_pct_medio"],
+        "metade_efeito_real_pct": 0.5 * abs(e["efeito_pct_medio"]),
+        "max_abs_placebo_pct": max_placebo,
+        "passaria": bool(max_placebo < 0.5 * abs(e["efeito_pct_medio"])),
+    }
+    principal = {
+        "descricao": "placebo (12 meses) comparado ao efeito real dos primeiros 12 meses — leitura usada no veredito",
+        "efeito_real_12m_pct": e12["efeito_pct_medio"], "metade_efeito_real_pct": 0.5 * abs(e12["efeito_pct_medio"]),
+        "max_abs_placebo_pct": max_placebo, "passa": bool(max_placebo < 0.5 * abs(e12["efeito_pct_medio"])),
+    }
     return {
-        "veredito": veredito, "explicacao": expl,
+        "veredito": veredito, "explicacao": expl, "leitura": leitura,
+        "comparacao_placebo_principal": principal, "comparacao_placebo_secundaria": secundaria,
         "criterios": {"sustentado_6m": bool(c_sust), "placebos_menores_que_metade": bool(c_plac),
                       "backtest_bate_ingenuo": bool(c_bt)},
         "modelo": cf.attrs["modelo"], "efeito": e, "efeito_12m": e12,
@@ -127,10 +159,28 @@ def ato1(so: pd.DataFrame) -> dict:
     }
 
 
+def _pos_hoc(serie: pd.DataFrame) -> dict:
+    """Checagens feitas DEPOIS de ver o resultado principal; não entram no veredito."""
+    d = serie.set_index("mes")
+    y = np.log(d["razao"])
+    out = {"rotulo": "pós-hoc (feito depois de ver o resultado), não usado no veredito",
+           "alvo": "log(software / mediana dos outros setores)", "placebos_dummy": []}
+    for dt in ["2021-06-01", "2022-03-01", "2022-06-01"]:
+        X = pd.DataFrame({"FEDFUNDS": d["FEDFUNDS"], "pos": (d.index >= dt).astype(float)})
+        r = _ols_hac(y, X, "pos")
+        out["placebos_dummy"].append({"dummy_desde": dt, "coef": r["coef_termo"], "p": r["p_termo"],
+                                      "efeito_pct": r["coeficientes"]["pos"]["efeito_pct"]})
+    X = pd.DataFrame({"FEDFUNDS": d["FEDFUNDS"], "pos": (d.index >= INTERVENCAO).astype(float),
+                      "tendencia": np.arange(len(d), dtype=float)})
+    out["com_tendencia_linear"] = _ols_hac(y, X, "pos")
+    return out
+
+
 def ato2(indeed: pd.DataFrame, fred: pd.DataFrame, cap: pd.DataFrame) -> dict:
     out = vagas_vs_setores(indeed, fred, cap, intervencao=INTERVENCAO)
     serie = out.pop("serie")
     serie.to_csv(RESULTS / "vagas_serie.csv", index=False)
+    out["sensibilidade_pos_hoc"] = _pos_hoc(serie)
     (RESULTS / "vagas.json").write_text(json.dumps(_limpo(out), ensure_ascii=False, indent=2), encoding="utf-8")
     p = out["principal"]
     coef, pval = p["coef_termo"], p["p_termo"]
@@ -138,8 +188,7 @@ def ato2(indeed: pd.DataFrame, fred: pd.DataFrame, cap: pd.DataFrame) -> dict:
     veredito = "consistente com IA" if ok else "consistente com ciclo"
     pct = (np.exp(coef) - 1) * 100
     if ok:
-        expl = (f"Mesmo controlando a Fed Funds, software ficou {abs(pct):.0f}% mais baixo que a mediana dos setores "
-                f"após dez/2022 (p HAC = {pval:.3f}); consistente com IA, mas sem prova de causa.")
+        expl = "consistente com IA pela regra, mas sem separar o fim do boom de 2021–22"
     else:
         expl = (f"Controlando a Fed Funds, a diferença pós-dez/2022 de software vs. mediana dos setores "
                 f"({pct:+.0f}%, p HAC = {pval:.3f}) não passa o critério; não dá para separar do ciclo de juros.")
@@ -157,6 +206,7 @@ def main() -> dict:
     fred = pd.read_csv(PROCESSED / "fred_mensal.csv", parse_dates=["mes"])
     cap = pd.read_csv(PROCESSED / "capacidade_mensal.csv", parse_dates=["mes"])
     vereditos = {"ato1_stackoverflow": ato1(so), "ato2_vagas": ato2(indeed, fred, cap),
+                 "limitacoes": LIMITACOES,
                  "regras": "design.md §7.1, aplicadas literalmente (ver docstring de src/models/run_series.py)"}
     (RESULTS / "vereditos_series.json").write_text(json.dumps(_limpo(vereditos), ensure_ascii=False, indent=2),
                                                    encoding="utf-8")

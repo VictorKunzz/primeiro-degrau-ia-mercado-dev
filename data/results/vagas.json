@@ -133,5 +133,66 @@
     "coef_termo": -0.023153,
     "alvo": "log(software / mediana dos outros setores)",
     "nota": "capacidade = log(1 + melhor horizonte METR em minutos); meses sem medição excluídos"
+  },
+  "sensibilidade_pos_hoc": {
+    "rotulo": "pós-hoc (feito depois de ver o resultado), não usado no veredito",
+    "alvo": "log(software / mediana dos outros setores)",
+    "placebos_dummy": [
+      {
+        "dummy_desde": "2021-06-01",
+        "coef": 0.225659,
+        "p": 0.000366,
+        "efeito_pct": 25.314888
+      },
+      {
+        "dummy_desde": "2022-03-01",
+        "coef": 0.263803,
+        "p": 0.000788,
+        "efeito_pct": 30.187119
+      },
+      {
+        "dummy_desde": "2022-06-01",
+        "coef": 0.221412,
+        "p": 0.090348,
+        "efeito_pct": 24.783764
+      }
+    ],
+    "com_tendencia_linear": {
+      "n": 81,
+      "r2": 0.866091,
+      "cov_type": "HAC (Newey-West), maxlags=12",
+      "coeficientes": {
+        "FEDFUNDS": {
+          "coef": -0.040523,
+          "ic95": [
+            -0.076279,
+            -0.004767
+          ],
+          "p": 0.026333,
+          "efeito_pct": -3.971295
+        },
+        "pos": {
+          "coef": -0.451431,
+          "ic95": [
+            -0.748724,
+            -0.154138
+          ],
+          "p": 0.002919,
+          "efeito_pct": -36.328394
+        },
+        "tendencia": {
+          "coef": 0.002312,
+          "ic95": [
+            -0.002125,
+            0.00675
+          ],
+          "p": 0.307123,
+          "efeito_pct": 0.231492
+        }
+      },
+      "termo_teste": "pos",
+      "p_termo": 0.002919,
+      "coef_termo": -0.451431
+    }
   }
 }

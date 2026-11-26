@@ -2,6 +2,22 @@
   "ato1_stackoverflow": {
     "veredito": "inconclusivo",
     "explicacao": "Inconclusivo: falhou(aram) placebos (regra §7.1).",
+    "leitura": "Nos primeiros 12 meses a queda (-24%) não se distingue do placebo de reversão da COVID (corte falso 2020-06: -30%). Em 48 meses a divergência (-64% em média, 43 meses seguidos abaixo do IC 95%, -98% no último mês) não tem análogo placebo de duração parecida, mas a regra de 12 meses não testa isso.",
+    "comparacao_placebo_principal": {
+      "descricao": "placebo (12 meses) comparado ao efeito real dos primeiros 12 meses — leitura usada no veredito",
+      "efeito_real_12m_pct": -23.674083,
+      "metade_efeito_real_pct": 11.837041,
+      "max_abs_placebo_pct": 29.804218,
+      "passa": false
+    },
+    "comparacao_placebo_secundaria": {
+      "rotulo": "secundária, não usada no veredito",
+      "descricao": "placebo comparado ao efeito médio do período pós-corte inteiro (48 meses)",
+      "efeito_real_periodo_todo_pct": -64.406805,
+      "metade_efeito_real_pct": 32.203402,
+      "max_abs_placebo_pct": 29.804218,
+      "passaria": true
+    },
     "criterios": {
       "sustentado_6m": true,
       "placebos_menores_que_metade": false,
@@ -111,7 +127,7 @@
   },
   "ato2_vagas": {
     "veredito": "consistente com IA",
-    "explicacao": "Mesmo controlando a Fed Funds, software ficou 28% mais baixo que a mediana dos setores após dez/2022 (p HAC = 0.000); consistente com IA, mas sem prova de causa.",
+    "explicacao": "consistente com IA pela regra, mas sem separar o fim do boom de 2021–22",
     "numeros": {
       "coef_pos_log": -0.335232,
       "efeito_pos_pct": -28.482753,
@@ -131,5 +147,11 @@
       }
     }
   },
+  "limitacoes": [
+    "O Stack Overflow mede demanda por perguntas no site, não o 'primeiro degrau' da carreira; a queda também tem causas fora do mercado de trabalho (chatbots substituindo o Q&A, política de moderação, perguntas apagadas que não aparecem na API).",
+    "O pré-período inclui o pico da COVID (2020): ele gera o placebo de 2020-06 (reversão do pico) e a pior origem do backtest.",
+    "A ordem do SARIMAX é escolhida por AIC entre modelos com e sem diferença sazonal (D=0 vs. D=1); AICs com diferenciações diferentes não são estritamente comparáveis.",
+    "Vagas (Indeed) só existem desde 2020-02: o pré-período tem 34 meses e é dominado pelo boom de software de 2021–22; FEDFUNDS e a dummy pós-ChatGPT são colineares e um único juro é controle grosseiro do ciclo."
+  ],
   "regras": "design.md §7.1, aplicadas literalmente (ver docstring de src/models/run_series.py)"
 }
