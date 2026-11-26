@@ -6,10 +6,9 @@ from src.etl import stackoverflow as so
 
 
 class FakeResp:
-    status_code = 200
-
-    def __init__(self, data):
+    def __init__(self, data, status_code=200):
         self._d = data
+        self.status_code = status_code
 
     def json(self):
         return self._d
@@ -28,7 +27,6 @@ class FakeSession:
 @pytest.fixture(autouse=True)
 def raw_tmp(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "RAW", tmp_path)
-    monkeypatch.setattr(so, "_estado", {"quota": None})
 
 
 def test_params_total():
@@ -60,3 +58,28 @@ def test_cache():
     assert so.contar_perguntas_mes(m, "java", None, s) == 7
     assert so.contar_perguntas_mes(m, "java", None, s) == 7
     assert len(s.calls) == 1
+
+
+def test_throttle_400_error_id_502(monkeypatch):
+    dormidas = []
+    monkeypatch.setattr(so.time, "sleep", dormidas.append)
+    respostas = [FakeResp({"error_id": 502, "error_name": "throttle_violation"}, 400), FakeResp({"total": 5})]
+
+    class S:
+        def get(self, url, params=None, timeout=None):
+            return respostas.pop(0)
+
+    assert so.contar_perguntas_mes(pd.Timestamp("2022-11-01"), None, None, S()) == 5
+    assert dormidas
+
+
+def test_erro_de_rede_sem_url(monkeypatch):
+    import requests
+
+    class S:
+        def get(self, url, params=None, timeout=None):
+            raise requests.ConnectionError("https://x?key=SEGREDO")
+
+    with pytest.raises(RuntimeError) as e:
+        so.contar_perguntas_mes(pd.Timestamp("2022-11-01"), None, "SEGREDO", S())
+    assert "SEGREDO" not in str(e.value) and e.value.__cause__ is None

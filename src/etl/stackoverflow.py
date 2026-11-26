@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -12,15 +13,8 @@ from src import config
 
 API_URL = "https://api.stackexchange.com/2.3/questions"
 USER_AGENT = "primeiro-degrau-projeto-academico/1.0 (analise de series mensais)"
-QUOTA_MINIMA = 50
 TOTAL = "__total__"
 MAX_TENTATIVAS = 5
-
-_estado = {"quota": None}
-
-
-class QuotaBaixa(RuntimeError):
-    """Quota da API quase esgotada; coleta interrompida."""
 
 
 def _epoch(ts: pd.Timestamp) -> int:
@@ -50,22 +44,33 @@ def contar_perguntas_mes(mes: pd.Timestamp, tag: str | None, key: str | None, se
         params["key"] = key
 
     for tentativa in range(MAX_TENTATIVAS):
-        resp = session.get(API_URL, params=params, timeout=30)
-        if resp.status_code in (429, 502, 503):
-            time.sleep(2 ** (tentativa + 1))
+        try:
+            resp = session.get(API_URL, params=params, timeout=30)
+        except requests.RequestException as exc:
+            # a mensagem original pode conter a URL (e a chave): sanitizar
+            raise RuntimeError(f"Falha de rede na Stack Exchange API ({type(exc).__name__})") from None
+        try:
+            corpo = resp.json()
+        except ValueError:
+            corpo = {}
+        throttle = resp.status_code in (429, 502, 503) or (
+            isinstance(corpo, dict) and corpo.get("error_id") == 502
+        )
+        if throttle:
+            time.sleep(max(corpo.get("backoff", 0) if isinstance(corpo, dict) else 0, 2 ** (tentativa + 1)))
             continue
         if resp.status_code != 200:
             # não usar raise_for_status: a mensagem incluiria a URL com a chave
             raise RuntimeError(f"Stack Exchange API retornou HTTP {resp.status_code}")
-        dados = resp.json()
+        dados = corpo
         break
     else:
         raise RuntimeError("Stack Exchange API indisponível após várias tentativas")
 
     cache.parent.mkdir(parents=True, exist_ok=True)
-    cache.write_text(json.dumps(dados), encoding="utf-8")
-    if "quota_remaining" in dados:
-        _estado["quota"] = dados["quota_remaining"]
+    tmp = cache.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(dados), encoding="utf-8")
+    os.replace(tmp, cache)
     if dados.get("backoff"):
         time.sleep(dados["backoff"])
     return int(dados["total"])
@@ -80,9 +85,6 @@ def coletar_serie(inicio: str, tags: list[str | None]) -> pd.DataFrame:
         session.headers["User-Agent"] = USER_AGENT
         for tag in tags:
             for mes in meses:
-                if _estado["quota"] is not None and _estado["quota"] < QUOTA_MINIMA:
-                    print(f"Quota baixa ({_estado['quota']}); interrompendo coleta.")
-                    return pd.DataFrame(linhas, columns=["mes", "tag", "perguntas"])
                 n = contar_perguntas_mes(mes, tag, key, session)
                 linhas.append({"mes": mes, "tag": tag or TOTAL, "perguntas": n})
     return pd.DataFrame(linhas, columns=["mes", "tag", "perguntas"])
@@ -93,7 +95,7 @@ def main() -> pd.DataFrame:
     tags = coletar_serie("2015-01-01", ["python", "javascript", "java", "reactjs"])
     df = pd.concat([total, tags], ignore_index=True)
     df.to_csv(config.PROCESSED / "so_mensal.csv", index=False)
-    print(f"{len(df)} linhas; quota restante: {_estado['quota']}")
+    print(f"{len(df)} linhas")
     return df
 
 
