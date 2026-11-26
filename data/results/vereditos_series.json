@@ -1,0 +1,135 @@
+{
+  "ato1_stackoverflow": {
+    "veredito": "inconclusivo",
+    "explicacao": "Inconclusivo: falhou(aram) placebos (regra §7.1).",
+    "criterios": {
+      "sustentado_6m": true,
+      "placebos_menores_que_metade": false,
+      "backtest_bate_ingenuo": true
+    },
+    "modelo": {
+      "order": [
+        0,
+        1,
+        2
+      ],
+      "seasonal_order": [
+        1,
+        0,
+        0,
+        12
+      ],
+      "trend": "t",
+      "aic": -282.164957,
+      "treino_inicio": "2014-01-01",
+      "treino_fim": "2022-10-01",
+      "n_treino": 106
+    },
+    "efeito": {
+      "efeito_pct_medio": -64.406805,
+      "efeito_pct_faixa_ic": [
+        -75.151862,
+        -46.501812
+      ],
+      "efeito_pct_ultimo_mes": -98.318534,
+      "meses_abaixo_ic_seguidos": 43,
+      "meses_acima_ic_seguidos": 0,
+      "sustentado": true,
+      "n_meses": 48
+    },
+    "efeito_12m": {
+      "efeito_pct_medio": -23.674083,
+      "efeito_pct_faixa_ic": [
+        -38.241783,
+        -5.151909
+      ],
+      "efeito_pct_ultimo_mes": -42.050605,
+      "meses_abaixo_ic_seguidos": 7,
+      "meses_acima_ic_seguidos": 0,
+      "sustentado": true,
+      "n_meses": 12
+    },
+    "sensibilidade_inicio_2012": {
+      "modelo": {
+        "order": [
+          1,
+          1,
+          0
+        ],
+        "seasonal_order": [
+          1,
+          0,
+          0,
+          12
+        ],
+        "trend": "t",
+        "aic": -362.747052,
+        "treino_inicio": "2012-01-01",
+        "treino_fim": "2022-10-01",
+        "n_treino": 130
+      },
+      "efeito": {
+        "efeito_pct_medio": -64.726268,
+        "efeito_pct_faixa_ic": [
+          -74.191859,
+          -50.065245
+        ],
+        "efeito_pct_ultimo_mes": -98.341265,
+        "meses_abaixo_ic_seguidos": 43,
+        "meses_acima_ic_seguidos": 0,
+        "sustentado": true,
+        "n_meses": 48
+      }
+    },
+    "backtest": {
+      "mape_modelo_medio": 9.946168,
+      "mape_ingenuo_medio": 13.782073,
+      "origens_modelo_melhor": 4,
+      "n_origens": 6
+    },
+    "placebos": {
+      "max_abs_efeito_pct": 29.804218,
+      "por_data": [
+        {
+          "corte_falso": "2019-06-01",
+          "efeito_pct_medio": 22.076142,
+          "meses_abaixo_ic_seguidos": 0
+        },
+        {
+          "corte_falso": "2020-06-01",
+          "efeito_pct_medio": -29.804218,
+          "meses_abaixo_ic_seguidos": 12
+        }
+      ]
+    },
+    "its": {
+      "nivel_pos_pct": 27.01344,
+      "nivel_pos_p": 0.268325,
+      "inclinacao_pos_pct_mes": -9.266336,
+      "inclinacao_pos_p": 0.0
+    }
+  },
+  "ato2_vagas": {
+    "veredito": "consistente com IA",
+    "explicacao": "Mesmo controlando a Fed Funds, software ficou 28% mais baixo que a mediana dos setores após dez/2022 (p HAC = 0.000); consistente com IA, mas sem prova de causa.",
+    "numeros": {
+      "coef_pos_log": -0.335232,
+      "efeito_pos_pct": -28.482753,
+      "p_hac": 6e-06,
+      "coef_fedfunds": -0.046232,
+      "p_fedfunds": 0.020913,
+      "n_meses": 81,
+      "robustez_p": {
+        "diferenca": 0.000708,
+        "vs_total": 3e-06,
+        "capacidade": 0.078022
+      },
+      "robustez_coef": {
+        "diferenca": -31.156525,
+        "vs_total": -0.430788,
+        "capacidade": -0.023153
+      }
+    }
+  },
+  "regras": "design.md §7.1, aplicadas literalmente (ver docstring de src/models/run_series.py)"
+}

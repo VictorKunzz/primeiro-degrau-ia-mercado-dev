@@ -1,0 +1,3 @@
+corte_falso,fim_avaliacao,modelo,efeito_pct_medio,efeito_pct_ultimo_mes,meses_abaixo_ic_seguidos,meses_acima_ic_seguidos,sustentado,n_meses,efeito_pct_lo,efeito_pct_hi
+2019-06-01,2020-06-01,"[0, 1, 2][1, 0, 0, 12]",22.076141828816528,52.314193126955175,0,3,False,12,1.1548664138329368,47.8365537186665
+2020-06-01,2021-06-01,"[0, 1, 2][1, 0, 0, 12]",-29.804217582973845,-44.141289682610264,12,0,True,12,-42.2573620537352,-14.319479531702505

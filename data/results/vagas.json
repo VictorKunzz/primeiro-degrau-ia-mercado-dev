@@ -1,0 +1,137 @@
+{
+  "inicio": "2020-02-01",
+  "fim": "2026-10-01",
+  "n_meses": 81,
+  "intervencao": "2022-12-01",
+  "n_setores_outros": 46,
+  "pico_software": {
+    "mes": "2022-02-01",
+    "indice": 229.165714
+  },
+  "descritivo": {
+    "razao_media_pre": 1.088698,
+    "razao_media_pos": 0.646554,
+    "diferenca_media_pre": 15.174531,
+    "diferenca_media_pos": -41.199715,
+    "software_ultimo": 79.446129,
+    "mediana_ultimo": 107.230645,
+    "razao_ultimo": 0.74089
+  },
+  "principal": {
+    "n": 81,
+    "r2": 0.856251,
+    "cov_type": "HAC (Newey-West), maxlags=12",
+    "coeficientes": {
+      "FEDFUNDS": {
+        "coef": -0.046232,
+        "ic95": [
+          -0.085465,
+          -0.006998
+        ],
+        "p": 0.020913,
+        "efeito_pct": -4.517915
+      },
+      "pos": {
+        "coef": -0.335232,
+        "ic95": [
+          -0.480593,
+          -0.18987
+        ],
+        "p": 6e-06,
+        "efeito_pct": -28.482753
+      }
+    },
+    "termo_teste": "pos",
+    "p_termo": 6e-06,
+    "coef_termo": -0.335232,
+    "alvo": "log(software / mediana dos outros setores)"
+  },
+  "diferenca": {
+    "n": 81,
+    "r2": 0.773904,
+    "cov_type": "HAC (Newey-West), maxlags=12",
+    "coeficientes": {
+      "FEDFUNDS": {
+        "coef": -6.382676,
+        "ic95": [
+          -11.81695,
+          -0.948402
+        ],
+        "p": 0.021334,
+        "efeito_pct": -99.830941
+      },
+      "pos": {
+        "coef": -31.156525,
+        "ic95": [
+          -49.188953,
+          -13.124096
+        ],
+        "p": 0.000708,
+        "efeito_pct": -100.0
+      }
+    },
+    "termo_teste": "pos",
+    "p_termo": 0.000708,
+    "coef_termo": -31.156525,
+    "alvo": "software − mediana dos outros setores (pontos de índice)"
+  },
+  "vs_total": {
+    "n": 81,
+    "r2": 0.777085,
+    "cov_type": "HAC (Newey-West), maxlags=12",
+    "coeficientes": {
+      "FEDFUNDS": {
+        "coef": -0.021744,
+        "ic95": [
+          -0.071316,
+          0.027828
+        ],
+        "p": 0.389951,
+        "efeito_pct": -2.150924
+      },
+      "pos": {
+        "coef": -0.430788,
+        "ic95": [
+          -0.612651,
+          -0.248925
+        ],
+        "p": 3e-06,
+        "efeito_pct": -35.000325
+      }
+    },
+    "termo_teste": "pos",
+    "p_termo": 3e-06,
+    "coef_termo": -0.430788,
+    "alvo": "log(software / índice total Indeed IHLIDXUS)"
+  },
+  "capacidade": {
+    "n": 81,
+    "r2": 0.83366,
+    "cov_type": "HAC (Newey-West), maxlags=12",
+    "coeficientes": {
+      "FEDFUNDS": {
+        "coef": -0.103816,
+        "ic95": [
+          -0.13519,
+          -0.072442
+        ],
+        "p": 0.0,
+        "efeito_pct": -9.860865
+      },
+      "log_capacidade": {
+        "coef": -0.023153,
+        "ic95": [
+          -0.048904,
+          0.002597
+        ],
+        "p": 0.078022,
+        "efeito_pct": -2.288731
+      }
+    },
+    "termo_teste": "log_capacidade",
+    "p_termo": 0.078022,
+    "coef_termo": -0.023153,
+    "alvo": "log(software / mediana dos outros setores)",
+    "nota": "capacidade = log(1 + melhor horizonte METR em minutos); meses sem medição excluídos"
+  }
+}
