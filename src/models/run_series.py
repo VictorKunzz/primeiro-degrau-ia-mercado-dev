@@ -16,6 +16,10 @@ Regras de veredito (design §7.1), fixadas antes de ler os resultados:
   controlar FEDFUNDS (coeficiente da dummy pós-ChatGPT < 0) e p < 0,05 (HAC). Senão
   "consistente com ciclo". Especificação principal decidida antes: log(software/mediana)
   ~ FEDFUNDS + pós; as demais (diferença, vs. total, capacidade) são só robustez.
+  Correção metodológica (revisão estatística, decisão do controlador): os resíduos do OLS
+  têm DW ≈ 0,2 (autocorrelação lag-1 ≈ 0,9) e HAC com n≈80 não torna o p-valor válido;
+  o teste principal passa a ser a regressão com erros AR(1) (SARIMAX (1,0,0) + exog).
+  A correção vai CONTRA a tese; o resultado HAC original fica em vagas.json.
 
 Escolhas do Ato 1 (decisão do controlador):
 - Série principal = total mensal de perguntas; janela de treino 2014-01 → CORTE_PRE_IA
@@ -29,14 +33,15 @@ import json
 import numpy as np
 import pandas as pd
 
-from src.config import CORTE_PRE_IA, PROCESSED, RESULTS
+from src.config import CORTE_PRE_IA, DATA_CHATGPT, PROCESSED, RESULTS
 from src.models.series import (_ols_hac, backtest, contrafactual, efeito, its_segmentado, placebos,
                                vagas_vs_setores)
 
 INICIO_TOTAL = pd.Timestamp("2014-01-01")
 INICIO_SENSIBILIDADE = pd.Timestamp("2012-01-01")
 INICIO_TAGS = pd.Timestamp("2015-01-01")
-INTERVENCAO = pd.Timestamp("2022-12-01")  # primeiro mês inteiro após o ChatGPT (30/11/2022)
+# primeiro mês inteiro após o ChatGPT (30/11/2022) → 2022-12-01
+INTERVENCAO = (DATA_CHATGPT.to_period("M") + 1).to_timestamp()
 DATAS_PLACEBO = ["2019-06-01", "2020-06-01"]
 LIMITACOES = [
     "O Stack Overflow mede demanda por perguntas no site, não o 'primeiro degrau' da carreira; a queda também "
@@ -47,7 +52,17 @@ LIMITACOES = [
     "A ordem do SARIMAX é escolhida por AIC entre modelos com e sem diferença sazonal (D=0 vs. D=1); AICs com "
     "diferenciações diferentes não são estritamente comparáveis.",
     "Vagas (Indeed) só existem desde 2020-02: o pré-período tem 34 meses e é dominado pelo boom de software de "
-    "2021–22; FEDFUNDS e a dummy pós-ChatGPT são colineares e um único juro é controle grosseiro do ciclo.",
+    "2021–22; FEDFUNDS e a dummy pós-ChatGPT são colineares (correlação ≈ 0,93) e um único juro é controle "
+    "grosseiro do ciclo.",
+    "Ato 2: os resíduos do OLS são fortemente autocorrelacionados (Durbin-Watson ≈ 0,2; lag-1 ≈ 0,9). Erros HAC "
+    "com ~80 meses não corrigem isso; o teste usado no veredito é a regressão com erros AR(1). As regressões de "
+    "robustez (diferença, vs. total, capacidade) e as checagens pós-hoc seguem em OLS+HAC e têm o mesmo problema.",
+    "Escolha de método: na variante sazonal sem diferença sazonal (1,0,0,12) o SARIMAX leva deriva (trend='t', "
+    "crescimento % constante com d=1); sem ela a previsão ficaria plana numa série que já caía, inflando o efeito.",
+    "`previsto` no contrafactual é exp da média em log, ou seja, a mediana da previsão em nível (não a média); os "
+    "limites lo95/hi95 são exp dos limites em log.",
+    "ITS: o termo de mudança de nível (+27%, não significativo) é um desajuste de forma funcional — a queda "
+    "acelera em termos de log, e a mudança de inclinação absorve a quebra; não ler o nível como 'alta'.",
 ]
 
 
@@ -92,6 +107,8 @@ def ato1(so: pd.DataFrame) -> dict:
 
     its = its_segmentado(y, INTERVENCAO, inicio=INICIO_TOTAL)
     its["sensibilidade_inicio_2012"] = its_segmentado(y, INTERVENCAO, inicio=INICIO_SENSIBILIDADE)
+    its["nota_nivel"] = ("A mudança de nível é desajuste de forma funcional: a queda acelera em log, então a "
+                         "inclinação pós absorve a quebra e o nível fica positivo/não significativo; não ler como alta.")
     (RESULTS / "so_its.json").write_text(json.dumps(_limpo(its), ensure_ascii=False, indent=2),
                                          encoding="utf-8")
 
@@ -182,22 +199,31 @@ def ato2(indeed: pd.DataFrame, fred: pd.DataFrame, cap: pd.DataFrame) -> dict:
     serie.to_csv(RESULTS / "vagas_serie.csv", index=False)
     out["sensibilidade_pos_hoc"] = _pos_hoc(serie)
     (RESULTS / "vagas.json").write_text(json.dumps(_limpo(out), ensure_ascii=False, indent=2), encoding="utf-8")
-    p = out["principal"]
+    p = out["modelo_principal"]
+    h = out["modelo_hac_original"]
     coef, pval = p["coef_termo"], p["p_termo"]
     ok = coef < 0 and pval < 0.05
     veredito = "consistente com IA" if ok else "consistente com ciclo"
     pct = (np.exp(coef) - 1) * 100
     if ok:
-        expl = "consistente com IA pela regra, mas sem separar o fim do boom de 2021–22"
+        expl = ("consistente com IA pela regra (erros AR(1)), mas sem separar o fim do boom de 2021–22")
     else:
-        expl = (f"Controlando a Fed Funds, a diferença pós-dez/2022 de software vs. mediana dos setores "
-                f"({pct:+.0f}%, p HAC = {pval:.3f}) não passa o critério; não dá para separar do ciclo de juros.")
+        expl = ("Software caiu mais que os outros setores depois de 2022, mas quando se modela a inércia da série "
+                "e os juros, a diferença não se separa do fim do boom de 2021–22; os dados não permitem atribuir à IA.")
     return {"veredito": veredito, "explicacao": expl,
-            "numeros": {"coef_pos_log": coef, "efeito_pos_pct": float(pct), "p_hac": pval,
+            "numeros": {"teste": "regressão com erros AR(1), alvo log(software/mediana) ~ FEDFUNDS + pós",
+                        "coef_pos_log": coef, "ic95_pos_log": p["ic95_termo"], "efeito_pos_pct": float(pct),
+                        "p": pval, "ar1": p["ar1"],
                         "coef_fedfunds": p["coeficientes"]["FEDFUNDS"]["coef"],
                         "p_fedfunds": p["coeficientes"]["FEDFUNDS"]["p"], "n_meses": p["n"],
-                        "robustez_p": {k: out[k]["p_termo"] for k in ("diferenca", "vs_total", "capacidade") if k in out},
-                        "robustez_coef": {k: out[k]["coef_termo"] for k in ("diferenca", "vs_total", "capacidade") if k in out}}}
+                        "corr_fedfunds_pos": out["corr_fedfunds_pos"],
+                        "hac_original_substituido": {"coef_pos_log": h["coef_termo"], "p_hac": h["p_termo"],
+                                                     "durbin_watson": h["durbin_watson"],
+                                                     "autocorr_lag1": h["autocorr_lag1"],
+                                                     "nota": h["nota"]},
+                        "robustez_hac_p": {k: out[k]["p_termo"] for k in ("diferenca", "vs_total", "capacidade") if k in out},
+                        "robustez_hac_coef": {k: out[k]["coef_termo"] for k in ("diferenca", "vs_total", "capacidade") if k in out},
+                        "nota_robustez": "robustez estimada com OLS+HAC, sujeita ao mesmo problema de autocorrelação"}}
 
 
 def main() -> dict:

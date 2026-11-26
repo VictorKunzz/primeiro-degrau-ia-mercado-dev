@@ -66,6 +66,7 @@ def contrafactual(y: pd.Series, corte: pd.Timestamp, inicio: pd.Timestamp | None
     """SARIMAX em log(y) ajustado em [inicio, corte]; prevê do mês seguinte até `fim`.
 
     Retorna DataFrame (index mes) com real, previsto, lo95, hi95 (exp do IC em log).
+    `previsto` = exp(média prevista em log) = mediana da previsão em nível (não a média).
     A ordem escolhida fica em `df.attrs["modelo"]`.
     """
     y = _preparar(y)
@@ -218,12 +219,42 @@ def _ols_hac(y: pd.Series, X: pd.DataFrame, termo: str) -> dict:
     return out
 
 
+def regressao_erros_ar1(y: pd.Series, X: pd.DataFrame, termo: str) -> dict:
+    """Regressão com erros AR(1): SARIMAX(order=(1,0,0), exog=X, trend="c").
+
+    Usada como teste principal do Ato 2 porque os resíduos do OLS são fortemente
+    autocorrelacionados (DW ≈ 0,2) e HAC com n≈80 não corrige isso.
+    """
+    y = pd.Series(np.asarray(y, dtype=float), index=pd.RangeIndex(len(y)))
+    Xr = pd.DataFrame(np.asarray(X, dtype=float), columns=list(X.columns), index=y.index)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = SARIMAX(y, exog=Xr, order=(1, 0, 0), trend="c").fit(disp=False, maxiter=500)
+    ci = res.conf_int()
+    coefs = {k: {"coef": float(res.params[k]), "ic95": [float(ci.loc[k, 0]), float(ci.loc[k, 1])],
+                 "p": float(res.pvalues[k]), "efeito_pct": float((np.exp(res.params[k]) - 1) * 100)}
+             for k in Xr.columns}
+    return {"modelo": "regressão com erros AR(1): SARIMAX order=(1,0,0), exog, trend='c'",
+            "n": int(res.nobs), "aic": float(res.aic), "coeficientes": coefs,
+            "ar1": float(res.params["ar.L1"]), "ar1_p": float(res.pvalues["ar.L1"]),
+            "termo_teste": termo, "coef_termo": coefs[termo]["coef"], "ic95_termo": coefs[termo]["ic95"],
+            "p_termo": coefs[termo]["p"]}
+
+
+def durbin_watson_ols(y: pd.Series, X: pd.DataFrame) -> dict:
+    from statsmodels.stats.stattools import durbin_watson
+    r = sm.OLS(y, sm.add_constant(X)).fit().resid
+    return {"durbin_watson": float(durbin_watson(r)), "autocorr_lag1": float(pd.Series(r).autocorr(1))}
+
+
 def vagas_vs_setores(indeed: pd.DataFrame, fred: pd.DataFrame, capacidade: pd.DataFrame | None = None,
                      intervencao: pd.Timestamp = pd.Timestamp("2022-12-01")) -> dict:
     """Software vs. mediana dos outros setores (e vs. total Indeed), com FEDFUNDS + HAC.
 
     Alvo principal: log(software / mediana dos outros setores) — negativo = software pior.
     Termo testado: dummy pós-ChatGPT (a partir de `intervencao`), controlando FEDFUNDS.
+    Teste principal: regressão com erros AR(1) (`modelo_principal`); o OLS+HAC original fica
+    em `modelo_hac_original` com Durbin-Watson. Robustez (diferença, vs. total, capacidade) segue HAC.
     Alternativa: capacidade da IA (log(1 + horizonte METR em min)) no lugar da dummy.
     """
     ind = indeed.copy()
@@ -254,8 +285,15 @@ def vagas_vs_setores(indeed: pd.DataFrame, fred: pd.DataFrame, capacidade: pd.Da
         "software_ultimo": float(df.software.iloc[-1]), "mediana_ultimo": float(df.mediana_setores.iloc[-1]),
         "razao_ultimo": float(df.razao.iloc[-1]),
     }
-    out["principal"] = _ols_hac(df["log_razao"], df[["FEDFUNDS", "pos"]], "pos")
-    out["principal"]["alvo"] = "log(software / mediana dos outros setores)"
+    alvo = "log(software / mediana dos outros setores)"
+    out["corr_fedfunds_pos"] = float(df["FEDFUNDS"].corr(df["pos"]))
+    out["modelo_principal"] = regressao_erros_ar1(df["log_razao"], df[["FEDFUNDS", "pos"]], "pos")
+    out["modelo_principal"]["alvo"] = alvo
+    out["modelo_hac_original"] = _ols_hac(df["log_razao"], df[["FEDFUNDS", "pos"]], "pos")
+    out["modelo_hac_original"]["alvo"] = alvo
+    out["modelo_hac_original"].update(durbin_watson_ols(df["log_razao"], df[["FEDFUNDS", "pos"]]))
+    out["modelo_hac_original"]["nota"] = ("substituído: resíduos fortemente autocorrelacionados; HAC com n≈80 "
+                                          "não corrige isso, então o p-valor não é um teste válido")
     out["diferenca"] = _ols_hac(df["diferenca"], df[["FEDFUNDS", "pos"]], "pos")
     out["diferenca"]["alvo"] = "software − mediana dos outros setores (pontos de índice)"
     if "razao_total" in df:

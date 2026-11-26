@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.models.series import backtest, contrafactual, efeito, its_segmentado, placebos, vagas_vs_setores
+from src.models.series import (backtest, contrafactual, efeito, its_segmentado, placebos,
+                               regressao_erros_ar1, vagas_vs_setores)
 
 N = 180
 IDX = pd.date_range("2005-01-01", periods=N, freq="MS")
@@ -75,5 +76,31 @@ def test_vagas_estrutura():
     indeed = pd.DataFrame(linhas)
     fred = pd.DataFrame({"mes": meses, "serie": "FEDFUNDS", "valor": np.linspace(0, 5, 60)})
     out = vagas_vs_setores(indeed, fred)
-    assert out["principal"]["coef_termo"] < 0
-    assert 0 <= out["principal"]["p_termo"] <= 1
+    assert out["modelo_principal"]["coef_termo"] < 0
+    assert 0 <= out["modelo_principal"]["p_termo"] <= 1
+    assert "durbin_watson" in out["modelo_hac_original"]
+
+
+def _ar1_sintetico(efeito_pos: float, n: int = 120, phi: float = 0.9):
+    rng = np.random.default_rng(42)
+    e = np.zeros(n)
+    for i in range(1, n):
+        e[i] = phi * e[i - 1] + rng.normal(0, 0.05)
+    pos = (np.arange(n) >= 60).astype(float)
+    x = rng.normal(0, 1, n)
+    y = 0.5 + 0.1 * x + efeito_pos * pos + e
+    return pd.Series(y), pd.DataFrame({"x": x, "pos": pos})
+
+
+def test_ar1_recupera_phi_e_efeito():
+    y, X = _ar1_sintetico(-0.5, phi=0.6)
+    r = regressao_erros_ar1(y, X, "pos")
+    assert 0.4 < r["ar1"] < 0.8
+    assert r["coef_termo"] < -0.3 and r["p_termo"] < 0.05
+    assert r["ic95_termo"][0] < r["coef_termo"] < r["ic95_termo"][1]
+
+
+def test_ar1_sem_efeito_nao_significativo():
+    y, X = _ar1_sintetico(0.0)
+    r = regressao_erros_ar1(y, X, "pos")
+    assert r["p_termo"] > 0.05

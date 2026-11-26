@@ -17,7 +17,43 @@
     "mediana_ultimo": 107.230645,
     "razao_ultimo": 0.74089
   },
-  "principal": {
+  "corr_fedfunds_pos": 0.925934,
+  "modelo_principal": {
+    "modelo": "regressão com erros AR(1): SARIMAX order=(1,0,0), exog, trend='c'",
+    "n": 81,
+    "aic": -310.831377,
+    "coeficientes": {
+      "FEDFUNDS": {
+        "coef": -0.096292,
+        "ic95": [
+          -0.12934,
+          -0.063244
+        ],
+        "p": 0.0,
+        "efeito_pct": -9.180111
+      },
+      "pos": {
+        "coef": -0.033163,
+        "ic95": [
+          -0.184875,
+          0.118548
+        ],
+        "p": 0.668334,
+        "efeito_pct": -3.261928
+      }
+    },
+    "ar1": 0.956963,
+    "ar1_p": 0.0,
+    "termo_teste": "pos",
+    "coef_termo": -0.033163,
+    "ic95_termo": [
+      -0.184875,
+      0.118548
+    ],
+    "p_termo": 0.668334,
+    "alvo": "log(software / mediana dos outros setores)"
+  },
+  "modelo_hac_original": {
     "n": 81,
     "r2": 0.856251,
     "cov_type": "HAC (Newey-West), maxlags=12",
@@ -44,7 +80,10 @@
     "termo_teste": "pos",
     "p_termo": 6e-06,
     "coef_termo": -0.335232,
-    "alvo": "log(software / mediana dos outros setores)"
+    "alvo": "log(software / mediana dos outros setores)",
+    "durbin_watson": 0.200519,
+    "autocorr_lag1": 0.899149,
+    "nota": "substituído: resíduos fortemente autocorrelacionados; HAC com n≈80 não corrige isso, então o p-valor não é um teste válido"
   },
   "diferenca": {
     "n": 81,

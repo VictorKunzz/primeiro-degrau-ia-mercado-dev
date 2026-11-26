@@ -126,32 +126,51 @@
     }
   },
   "ato2_vagas": {
-    "veredito": "consistente com IA",
-    "explicacao": "consistente com IA pela regra, mas sem separar o fim do boom de 2021–22",
+    "veredito": "consistente com ciclo",
+    "explicacao": "Software caiu mais que os outros setores depois de 2022, mas quando se modela a inércia da série e os juros, a diferença não se separa do fim do boom de 2021–22; os dados não permitem atribuir à IA.",
     "numeros": {
-      "coef_pos_log": -0.335232,
-      "efeito_pos_pct": -28.482753,
-      "p_hac": 6e-06,
-      "coef_fedfunds": -0.046232,
-      "p_fedfunds": 0.020913,
+      "teste": "regressão com erros AR(1), alvo log(software/mediana) ~ FEDFUNDS + pós",
+      "coef_pos_log": -0.033163,
+      "ic95_pos_log": [
+        -0.184875,
+        0.118548
+      ],
+      "efeito_pos_pct": -3.261928,
+      "p": 0.668334,
+      "ar1": 0.956963,
+      "coef_fedfunds": -0.096292,
+      "p_fedfunds": 0.0,
       "n_meses": 81,
-      "robustez_p": {
+      "corr_fedfunds_pos": 0.925934,
+      "hac_original_substituido": {
+        "coef_pos_log": -0.335232,
+        "p_hac": 6e-06,
+        "durbin_watson": 0.200519,
+        "autocorr_lag1": 0.899149,
+        "nota": "substituído: resíduos fortemente autocorrelacionados; HAC com n≈80 não corrige isso, então o p-valor não é um teste válido"
+      },
+      "robustez_hac_p": {
         "diferenca": 0.000708,
         "vs_total": 3e-06,
         "capacidade": 0.078022
       },
-      "robustez_coef": {
+      "robustez_hac_coef": {
         "diferenca": -31.156525,
         "vs_total": -0.430788,
         "capacidade": -0.023153
-      }
+      },
+      "nota_robustez": "robustez estimada com OLS+HAC, sujeita ao mesmo problema de autocorrelação"
     }
   },
   "limitacoes": [
     "O Stack Overflow mede demanda por perguntas no site, não o 'primeiro degrau' da carreira; a queda também tem causas fora do mercado de trabalho (chatbots substituindo o Q&A, política de moderação, perguntas apagadas que não aparecem na API).",
     "O pré-período inclui o pico da COVID (2020): ele gera o placebo de 2020-06 (reversão do pico) e a pior origem do backtest.",
     "A ordem do SARIMAX é escolhida por AIC entre modelos com e sem diferença sazonal (D=0 vs. D=1); AICs com diferenciações diferentes não são estritamente comparáveis.",
-    "Vagas (Indeed) só existem desde 2020-02: o pré-período tem 34 meses e é dominado pelo boom de software de 2021–22; FEDFUNDS e a dummy pós-ChatGPT são colineares e um único juro é controle grosseiro do ciclo."
+    "Vagas (Indeed) só existem desde 2020-02: o pré-período tem 34 meses e é dominado pelo boom de software de 2021–22; FEDFUNDS e a dummy pós-ChatGPT são colineares (correlação ≈ 0,93) e um único juro é controle grosseiro do ciclo.",
+    "Ato 2: os resíduos do OLS são fortemente autocorrelacionados (Durbin-Watson ≈ 0,2; lag-1 ≈ 0,9). Erros HAC com ~80 meses não corrigem isso; o teste usado no veredito é a regressão com erros AR(1). As regressões de robustez (diferença, vs. total, capacidade) e as checagens pós-hoc seguem em OLS+HAC e têm o mesmo problema.",
+    "Escolha de método: na variante sazonal sem diferença sazonal (1,0,0,12) o SARIMAX leva deriva (trend='t', crescimento % constante com d=1); sem ela a previsão ficaria plana numa série que já caía, inflando o efeito.",
+    "`previsto` no contrafactual é exp da média em log, ou seja, a mediana da previsão em nível (não a média); os limites lo95/hi95 são exp dos limites em log.",
+    "ITS: o termo de mudança de nível (+27%, não significativo) é um desajuste de forma funcional — a queda acelera em termos de log, e a mudança de inclinação absorve a quebra; não ler o nível como 'alta'."
   ],
   "regras": "design.md §7.1, aplicadas literalmente (ver docstring de src/models/run_series.py)"
 }

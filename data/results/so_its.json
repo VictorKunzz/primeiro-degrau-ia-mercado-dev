@@ -66,5 +66,6 @@
       "p": 0.0,
       "efeito_pct": -9.49374
     }
-  }
+  },
+  "nota_nivel": "A mudança de nível é desajuste de forma funcional: a queda acelera em log, então a inclinação pós absorve a quebra e o nível fica positivo/não significativo; não ler como alta."
 }
