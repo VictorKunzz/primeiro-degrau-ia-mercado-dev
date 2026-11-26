@@ -1,0 +1,6 @@
+ResponseId,Employment,WorkExp,Role,Country,ConvertedCompYearly,AISelect,AISentiment,AITrust
+1,Employed,1,"Developer, full-stack",Brazil,30000,AI coding assistants or coding agents;AI agents or automated workflows,Somewhat favorable,I trust it when I can easily verify the output
+2,Employed,12,"Architect, software or solutions",United States of America,150000,General-purpose AI chat tools,Neutral,I trust it for low-risk work tasks only
+3,Student,,Student,India,,I don't use AI tools,Not sure,
+4,Not employed,3,,Germany,0,,,
+5,"Independent contractor, freelancer, or self-employed",25,"Developer, back-end",Canada,2000000,AI agents or automated workflows,Very unfavorable,I do not trust it for most work tasks
