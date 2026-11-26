@@ -41,7 +41,9 @@ md("""
 
 Ciência de Dados · Católica SC · Data Storytelling com CRISP-DM, ETL, EDA e análise preditiva.
 
-*Para apresentar, abra no JupyterLab (código recolhido) ou `reports/primeiro_degrau.html`; no GitHub o código aparece. Os números do texto são lidos de `data/results/` e `data/processed/` na execução; nada foi digitado à mão.*
+[![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/VictorKunzz/primeiro-degrau-ia-mercado-dev/blob/main/notebooks/primeiro_degrau.ipynb) · Painel interativo: `streamlit run app/streamlit_app.py`
+
+*Os números do texto são lidos de `data/results/` e `data/processed/` na execução; nada foi digitado à mão. No Colab, use Ambiente de execução → Executar tudo: a primeira célula baixa os dados do repositório.*
 """)
 
 code(r'''
@@ -57,6 +59,14 @@ import pandas as pd
 from IPython.display import Markdown, display
 
 warnings.filterwarnings("ignore")
+if "google.colab" in sys.modules and not Path("data/results").exists():
+    # No Google Colab: baixa o repositório (dados já processados) e trabalha dentro dele.
+    import subprocess
+    if not Path("/content/primeiro-degrau").exists():
+        subprocess.run(["git", "clone", "-q", "--depth", "1",
+                        "https://github.com/VictorKunzz/primeiro-degrau-ia-mercado-dev.git",
+                        "/content/primeiro-degrau"], check=True)
+    os.chdir("/content/primeiro-degrau")
 ROOT = Path.cwd().parent if Path.cwd().name == "notebooks" else Path.cwd()
 sys.path.insert(0, str(ROOT))
 PROC, RES = ROOT / "data" / "processed", ROOT / "data" / "results"

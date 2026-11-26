@@ -1,15 +1,15 @@
 # Roteiro da apresentação (10 minutos)
 
-Abrir `reports/primeiro_degrau.html`, ou o notebook no JupyterLab com o código recolhido. Os números abaixo são os da execução de 26/11/2026. Se os dados forem atualizados, vale conferir no notebook.
+Deixe duas abas abertas no navegador antes de começar: `reports/primeiro_degrau.html` (a história) e o painel interativo (`streamlit run app/streamlit_app.py`, abre em http://localhost:8501). Os números abaixo são os da execução de 26/11/2026. Se os dados forem atualizados, vale conferir no notebook.
 
 | # | O que mostrar | Tempo |
 |---|---|---|
 | 1 | Seção 0: resposta curta + tabela de vereditos | 1 min 30 |
-| 2 | Gráfico 0 (horizonte METR), rápido | 1 min |
+| 2 | Gráfico 0 (horizonte METR), rápido | 30 s |
 | 3 | Gráfico 3 (Stack Overflow vs. tendência anterior) | 1 min 30 |
 | 4 | Ato 2: só a linha do veredito e a tabela | 1 min |
 | 5 | Gráfico 5 (fatia empregada ≤2 vs. ≥10 anos) | 1 min 30 |
-| 6 | Gráfico 7 (conta do gestor) | 1 min 30 |
+| 6 | Gráfico 7 + **demonstração ao vivo no painel** (aba Conta do gestor) | 2 min |
 | 7 | Seção 7 (recomendações e KPIs) | 1 min 30 |
 | | Folga para perguntas | ~30 s |
 
@@ -18,7 +18,7 @@ Abrir `reports/primeiro_degrau.html`, ou o notebook no JupyterLab com o código 
 - A resposta curta vem antes dos gráficos: o lugar onde o iniciante aprendia esvaziou e a fatia empregada de quem tem até 2 anos caiu muito mais que a do sênior.
 - Apontar a tabela de vereditos. As regras foram escritas **antes** de rodar os modelos, e por isso dois testes aparecem como "inconclusivo" e "consistente com ciclo". A gente manteve assim.
 
-## 2. Gráfico 0: a IA ficou mais autônoma (1 min)
+## 2. Gráfico 0: a IA ficou mais autônoma (30 s)
 - Em 3 anos, de tarefas de 5 minutos para perto de 16 horas, que é o limite do que o METR mede.
 - As três ondas (chat, assistente, agente) aparecem como linhas verticais; os outros gráficos usam os mesmos marcos.
 - Não ficar aqui: é contexto.
@@ -38,10 +38,13 @@ Abrir `reports/primeiro_degrau.html`, ou o notebook no JupyterLab com o código 
 - Usamos três métodos porque quem respondeu à pergunta de experiência mudou entre os anos.
 - Bate com estudos dos EUA (Stanford/ADP e Harvard). É associação, não causa.
 
-## 6. Gráfico 7: a conta do gestor (1 min 30)
+## 6. Gráfico 7 + painel ao vivo: a conta do gestor (2 min)
 - É simulação, não observação de empresas.
 - Se o júnior rende metade de um sênior, basta a IA render +5,8% para o sênior sozinho sair mais barato. Se rende 70%, precisa de +19,9%.
+- **Trocar para o painel, aba "Conta do gestor".** Mover o slider "Quanto o júnior produz" de 0,50 para 0,70 e mostrar o veredito mudando de verde para amarelo. Depois baixar o ganho da IA para −0,19 (o estudo do METR) e mostrar que aí o júnior sempre compensa.
+- Oferecer ao professor: "quer testar outra premissa?". Deixar ele escolher um número.
 - H2 é parcial porque tudo depende dessa premissa sobre o júnior.
+- Se sobrar tempo: aba "Primeiro degrau", alternar entre os três métodos e mostrar que a queda do júnior aparece em todos.
 
 ## 7. Seção 7: o que fazer (1 min 30)
 - Estudante: a fatia empregada caiu e a razão salarial subiu para 2,3×, então vale buscar entrada antes de se formar e acumular experiência que dê para provar. Usar agentes é requisito, não proteção.
