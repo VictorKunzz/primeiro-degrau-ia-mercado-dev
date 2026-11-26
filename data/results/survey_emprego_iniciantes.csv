@@ -1,0 +1,7 @@
+ano,faixa_exp,n,pct_empregado,ic_inf,ic_sup,pct_so_estudante,usar_na_inferencia,nota
+2024,≤2,3538,0.9734313171283211,0.9683436970039571,0.9785260033917467,,False,"Fora da inferência: em 2024 WorkExp foi respondido quase só por quem trabalha (58% dos empregados vs 9% dos não empregados), então a faixa ≤2 é selecionada por emprego. 2023 excluído pelo mesmo motivo."
+2024,≥10,14442,0.9373355490929234,0.9333887273230854,0.9412823708627613,,False,"Fora da inferência: em 2024 WorkExp foi respondido quase só por quem trabalha (58% dos empregados vs 9% dos não empregados), então a faixa ≤2 é selecionada por emprego. 2023 excluído pelo mesmo motivo."
+2025,≤2,4861,0.6216827813207159,0.6068710141946102,0.6358773914832339,0.22464513474593706,True,Válido: WorkExp respondido por 73% dos não empregados e 95% dos empregados.
+2025,≥10,23921,0.7469587391831445,0.7415241837715815,0.752351490322311,0.004514861418837005,True,Válido: WorkExp respondido por 73% dos não empregados e 95% dos empregados.
+2026,≤2,3464,0.4237875288683603,0.4073325635103926,0.44024249422632794,0.3565242494226328,True,Válido: WorkExp respondido por 70% dos não empregados e 85% dos empregados. Amostra 2026 tem mais estudantes entre ≤2 (composição muda).
+2026,≥10,14476,0.7283089251174357,0.7207774937828129,0.7351512848853274,0.0034539928156949434,True,Válido: WorkExp respondido por 70% dos não empregados e 85% dos empregados. Amostra 2026 tem mais estudantes entre ≤2 (composição muda).
