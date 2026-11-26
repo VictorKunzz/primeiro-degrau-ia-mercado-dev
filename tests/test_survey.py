@@ -48,3 +48,20 @@ def test_empregado_integral_e_agentes():
     assert list(h26["usa_agentes"].astype(object)) == [True, False, False, pd.NA, True]
     assert h26.loc[0, "empregado_integral"]
     assert h26.loc[0, "ia_sentimento"] == "Favorable"
+
+
+def test_2025_aiagents_e_workexp_unico():
+    df = pd.DataFrame({
+        "Employment": ["Employed", "Employed", None],
+        "WorkExp": [60, 2, None], "AISelect": ["Yes, I use AI tools daily", "No, and I don't plan to", None],
+        "AIAgents": ["Yes, I use AI agents at work daily", "No, but I plan to", None],
+    })
+    h = harmonizar(df, 2025)
+    assert list(h["usa_agentes"].astype(object)) == [True, False, pd.NA]
+    assert h["anos_exp"].max() == 51.0
+    assert list(h["anos_exp_fonte"].fillna("x")) == ["WorkExp", "WorkExp", "x"]
+
+
+def test_comparavel_cobre_todas_as_colunas():
+    from src.etl.survey import COMPARAVEL
+    assert set(COMPARAVEL) == set(COLUNAS_FINAIS) - {"ano"}

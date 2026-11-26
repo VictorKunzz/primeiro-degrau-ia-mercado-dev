@@ -1,12 +1,13 @@
 """ETL do Stack Overflow Developer Survey 2023-2026.
 
 Saída: data/processed/survey_harmonizado.parquet com as colunas
-ano, anos_exp, faixa_exp, cargo, emprego, empregado, empregado_integral,
+ano, anos_exp, anos_exp_fonte, faixa_exp, cargo, emprego, empregado, empregado_integral,
 salario_usd, pais, ia_usa, ia_sentimento, ia_confianca, ia_ameaca, usa_agentes.
 
 Decisões de harmonização (schema real conferido nos cabeçalhos de cada ano):
-- anos_exp: WorkExp (existe nos 4 anos). Em 2023/2024, onde WorkExp é vazio, usa
-  YearsCodePro como reserva. "Less than 1 year" -> 0.5; "More than 50 years" -> 51.
+- anos_exp: somente WorkExp (existe nos 4 anos; sem reserva por YearsCodePro, para
+  manter a mesma definição). "Less than 1 year" -> 0.5; "More than 50 years" -> 51;
+  teto 51. `anos_exp_fonte` = "WorkExp" quando há valor, NaN caso contrário.
 - cargo: DevType (2023-2025, texto multi-seleção separado por ";") e Role (2026).
   Não são estritamente comparáveis; o texto original é mantido.
 - emprego: texto original de Employment. Em 2023/24 há "Employed, full-time" e
@@ -16,7 +17,9 @@ Decisões de harmonização (schema real conferido nos cabeçalhos de cada ano):
   "Student, full-time"); em 2025/26, "Employed" (que
   mistura integral e parcial) conta como True. NaN se Employment ausente.
   Cuidado: essa flag NÃO é estritamente comparável entre 2024 e 2025.
-- salario_usd: ConvertedCompYearly; fora de [1.000; 1.000.000] vira NaN.
+- salario_usd: ConvertedCompYearly; fora de [1.000; 1.000.000] USD vira NaN (piso de
+  1.000 USD aprovado: valores menores são ruído).
+- COMPARAVEL: por coluna, anos em que o significado é idêntico (ver dicionário abaixo).
 - ia_usa (bool): AISelect. 2023-2025: "Yes..." = True. 2026: AISelect virou
   multi-seleção de tipos de ferramenta; qualquer ferramenta = True, "I don't use" = False.
 - ia_sentimento: AISent (2023-25) / AISentiment (2026), na escala
@@ -50,23 +53,47 @@ RAW_SURVEY = RAW / "survey"
 SAIDA = PROCESSED / "survey_harmonizado.parquet"
 
 COLUNAS_FINAIS = [
-    "ano", "anos_exp", "faixa_exp", "cargo", "emprego", "empregado",
+    "ano", "anos_exp", "anos_exp_fonte", "faixa_exp", "cargo", "emprego", "empregado",
     "empregado_integral", "salario_usd", "pais", "ia_usa", "ia_sentimento",
     "ia_confianca", "ia_ameaca", "usa_agentes",
 ]
 SALARIO_MIN, SALARIO_MAX = 1_000, 1_000_000
 
 # ano -> coluna original -> nome harmonizado (conferido no cabeçalho de cada CSV).
-# "anos_exp_reserva", "ia_select" e "agentes_raw" são intermediários usados em harmonizar().
+# "ia_select" e "agentes_raw" são intermediários usados em harmonizar().
 _COMUM = {"Employment": "emprego", "Country": "pais", "ConvertedCompYearly": "salario_usd",
           "WorkExp": "anos_exp", "AISelect": "ia_select"}
 MAPA_COLUNAS: dict[int, dict[str, str]] = {
-    2023: {**_COMUM, "YearsCodePro": "anos_exp_reserva", "DevType": "cargo", "AISent": "ia_sentimento"},
-    2024: {**_COMUM, "YearsCodePro": "anos_exp_reserva", "DevType": "cargo", "AISent": "ia_sentimento",
+    2023: {**_COMUM, "DevType": "cargo", "AISent": "ia_sentimento"},
+    2024: {**_COMUM, "DevType": "cargo", "AISent": "ia_sentimento",
            "AIAcc": "ia_confianca", "AIThreat": "ia_ameaca"},
     2025: {**_COMUM, "DevType": "cargo", "AISent": "ia_sentimento", "AIAcc": "ia_confianca",
            "AIThreat": "ia_ameaca", "AIAgents": "agentes_raw"},
     2026: {**_COMUM, "Role": "cargo", "AISentiment": "ia_sentimento", "AITrust": "ia_confianca"},
+}
+
+# Anos em que o significado de cada coluna harmonizada é idêntico (conferido nos schemas):
+# - ia_usa: AISelect é sim/não em 2023-25 (2025 só adiciona frequência); em 2026 virou
+#   multi-seleção de tipos de ferramenta.
+# - usa_agentes: só existe em 2025 (AIAgents) e 2026 (item de AISelect): perguntas
+#   diferentes, logo uso de ano único.
+# - empregado_integral: 2025+ funde integral/parcial em "Employed".
+# - ia_ameaca: AIThreat só em 2024-25. ia_confianca: AIAcc 2024-25 (2023 = benefícios,
+#   2026 = AITrust, outra escala). ia_sentimento: 2026 foi recodificado/colapsado.
+# - cargo: DevType (2023-25); Role (2026) é outra pergunta.
+_TODOS = [2023, 2024, 2025, 2026]
+COMPARAVEL: dict[str, list[int]] = {
+    "anos_exp": _TODOS, "anos_exp_fonte": _TODOS, "faixa_exp": _TODOS,
+    "cargo": [2023, 2024, 2025],
+    "emprego": [2023, 2024],
+    "empregado": _TODOS,
+    "empregado_integral": [2023, 2024],
+    "salario_usd": _TODOS, "pais": _TODOS,
+    "ia_usa": [2023, 2024, 2025],
+    "ia_sentimento": [2023, 2024, 2025],
+    "ia_confianca": [2024, 2025],
+    "ia_ameaca": [2024, 2025],
+    "usa_agentes": [],
 }
 
 _SENTIMENTO_2026 = {"Somewhat favorable": "Favorable", "Somewhat unfavorable": "Unfavorable",
@@ -125,15 +152,15 @@ def harmonizar(df: pd.DataFrame, ano: int) -> pd.DataFrame:
     out["ano"] = ano
 
     exp = _col(d, "anos_exp").map(_anos)
-    exp = exp.fillna(_col(d, "anos_exp_reserva").map(_anos))
-    out["anos_exp"] = exp.astype(float)
+    exp = exp.astype(float).clip(upper=51.0)
+    out["anos_exp"] = exp
+    out["anos_exp_fonte"] = pd.Series(np.where(exp.notna(), "WorkExp", None), index=d.index, dtype=object)
     out["faixa_exp"] = exp.map(_faixa)
 
     out["cargo"] = _col(d, "cargo")
     emp = _col(d, "emprego")
     out["emprego"] = emp
     tem = emp.notna()
-    s = emp.astype(str)
     # Employment é multi-seleção ("a;b"): avalia cada item (evita contar "Student, full-time").
     itens = emp.fillna("").astype(object).map(lambda v: str(v).split(";"))
     out["empregado"] = _bool(itens.map(lambda L: any(i.strip().startswith("Employed") for i in L)), tem)
@@ -180,6 +207,10 @@ def carregar_todos() -> pd.DataFrame:
     cob = (df.drop(columns="ano").notna().groupby(df["ano"]).mean() * 100).round(1)
     cob.insert(0, "n", df.groupby("ano").size())
     cob.to_csv(RESULTS / "survey_cobertura.csv")
+    pd.DataFrame(
+        [{"coluna": c, "anos_comparaveis": ";".join(map(str, a)) or "nenhum (ano unico)"}
+         for c, a in COMPARAVEL.items()]
+    ).to_csv(RESULTS / "survey_comparabilidade.csv", index=False)
     return df
 
 

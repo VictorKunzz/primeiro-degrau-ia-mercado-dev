@@ -1,0 +1,15 @@
+coluna,anos_comparaveis
+anos_exp,2023;2024;2025;2026
+anos_exp_fonte,2023;2024;2025;2026
+faixa_exp,2023;2024;2025;2026
+cargo,2023;2024;2025
+emprego,2023;2024
+empregado,2023;2024;2025;2026
+empregado_integral,2023;2024
+salario_usd,2023;2024;2025;2026
+pais,2023;2024;2025;2026
+ia_usa,2023;2024;2025
+ia_sentimento,2023;2024;2025
+ia_confianca,2024;2025
+ia_ameaca,2024;2025
+usa_agentes,nenhum (ano unico)

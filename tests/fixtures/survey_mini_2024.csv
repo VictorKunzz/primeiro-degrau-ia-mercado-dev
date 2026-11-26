@@ -1,6 +1,6 @@
 ResponseId,Employment,YearsCodePro,WorkExp,DevType,Country,ConvertedCompYearly,AISelect,AISent,AIAcc,AIThreat
-1,"Employed, full-time",Less than 1 year,,"Developer, back-end",Brazil,24000,Yes,Favorable,Somewhat trust,No
+1,"Employed, full-time",3,Less than 1 year,"Developer, back-end",Brazil,24000,Yes,Favorable,Somewhat trust,No
 2,"Employed, full-time",5,6,"Developer, full-stack",United States of America,120000,"No, but I plan to soon",Indifferent,Somewhat distrust,Yes
-3,Student; full-time,,,Student,India,0,"No, and I don't plan to",Unsure,,I'm not sure
+3,"Student, full-time",,,Student,India,0,"No, and I don't plan to",Unsure,,I'm not sure
 4,"Employed, part-time",12,15,Engineer,Germany,2000000,Yes,Very favorable,Highly trust,No
 5,,,,,Canada,,,,,
