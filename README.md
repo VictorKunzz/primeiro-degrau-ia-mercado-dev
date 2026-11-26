@@ -10,14 +10,14 @@ Atividade de **Data Storytelling** da disciplina de Ciência de Dados (Católica
 
 | Pergunta | O que os dados mostram | Veredito (regra definida antes de rodar) |
 |---|---|---|
-| **H1.** O primeiro degrau sumiu? | Entre 2025 e 2026, quem tem até 2 anos de experiência perdeu de **9 a 20 pontos** de emprego, conforme o método de correção. O sênior perdeu ~2. | **Confirmada** nos três métodos |
-| **Ato 1.** O lugar onde o júnior aprendia esvaziou? | O Stack Overflow ficou **64% abaixo** da projeção sem IA em 48 meses e 98% abaixo no último mês. No primeiro ano, porém, a queda não se distingue de um placebo da COVID. | **Inconclusivo** pela regra de 12 meses |
-| **Ato 2.** As vagas de software caíram por causa da IA? | Software caiu mais que os outros 46 setores, mas, quando se modelam a inércia da série e os juros, a diferença não se separa do fim do boom de 2021–22. | **Consistente com ciclo** |
-| **H2.** Sênior + IA custa menos que sênior + júnior? | Se o júnior rende metade de um sênior, basta a IA dar **+6%** de produtividade. Se rende 70%, são precisos +20%. | **Parcial** (depende da premissa) |
+| **H1.** O primeiro degrau encolheu? | Entre 2025 e 2026, a fatia empregada de quem tem até 2 anos de experiência caiu de **9 a 20 pontos**, conforme o método de correção; a do sênior, ~2. | **Confirmada** nos três métodos |
+| **Ato 1.** O lugar onde o júnior aprendia esvaziou? | O Stack Overflow ficou **64% abaixo** da projeção pela tendência anterior em 48 meses e 98% abaixo no último mês. No primeiro ano, porém, a queda não se distingue de um placebo da COVID. | **Inconclusivo** pela regra de 12 meses |
+| **Ato 2.** As vagas de software caíram mais que as dos outros setores, descontando juros? | Software caiu mais que os outros 46 setores, mas, quando se modelam a inércia da série e os juros, a diferença não se separa do fim do boom de 2021–22. | **Consistente com ciclo** |
+| **H2.** Sênior + IA custa menos que sênior + júnior? | Se o júnior rende metade de um sênior, basta a IA dar **+5,8%** de produtividade. Se rende 70%, são precisos +19,9%. | **Parcial** (depende da premissa) |
 | **H3.** O mercado ficou mais exigente? | A razão salarial sênior/júnior nos EUA subiu de **1,8 para 2,3** (2023→2026). Quem usa agentes relata *mais* ameaça, não menos. | **Parcial** |
 
 **Para o estudante:** o degrau de entrada agora cobra o que antes se aprendia nele. Vale chegar com fundamentos sólidos, domínio de agentes e um portfólio que prove entrega.
-**Para o gestor:** a conta de "sênior + IA" fecha em vários cenários, mas cortar o júnior seca a fonte dos sêniores de amanhã. A sugestão é manter um pipeline júnior menor e intencional.
+**Para o gestor:** a conta de "sênior + IA" fecha em vários cenários, mas cortar o júnior pode sair caro depois: tende a secar a fonte de sêniores, e a razão salarial já subiu para 2,3×. A sugestão é manter um pipeline júnior menor e intencional.
 
 ## CRISP-DM no notebook
 
