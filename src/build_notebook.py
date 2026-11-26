@@ -336,9 +336,9 @@ fontes = [
     ("Indeed Hiring Lab", f"Índice de vagas por setor nos EUA ({indeed.setor.nunique()} setores)",
      f"{mes_br(ind_ini)}–{mes_br(ind_fim)}", "diário → mensal",
      "https://github.com/hiring-lab/job_postings_tracker"),
-    ("FRED (via DBnomics)", "Taxa básica de juros dos EUA (Fed Funds) e índice total de vagas",
+    ("Federal Reserve H.15 (via DBnomics) + Indeed agregado", "Taxa básica de juros dos EUA (Fed Funds) e índice total de vagas",
      f"{mes_br(ff.mes.min())}–{mes_br(ff.mes.max())}", "mensal",
-     "https://fred.stlouisfed.org/series/FEDFUNDS"),
+     "https://db.nomics.world/FED/H15"),
     ("Epoch AI", "Capacidade da IA: horizonte de tarefa METR e SWE-bench Verified",
      f"{mes_br(h.index.min())}–{mes_br(h_fim)}", "por modelo → melhor valor do mês",
      "https://epoch.ai/benchmarks"),
@@ -370,8 +370,10 @@ ax.annotate(f"{num(h_3a)} min", (h_fim - pd.DateOffset(years=3), h_3a), xytext=(
 ax.legend(handles=[Line2D([], [], color=CORES_ONDA[k], lw=1, ls=(0, (3, 3)), label=l) for k, l in
                    [("chat", "onda 1: chat"), ("assistente", "onda 2: assistente"), ("agente", "onda 3: agente")]],
           loc="lower right")
-titulo(ax, f"A IA ficou ~{num(razao_3a)} vezes mais autônoma em 3 anos",
+titulo(ax, f"Em 3 anos, a IA passou de tarefas de {num(h_3a)} minutos para mais de 16 horas",
        "Duração (para um humano) das tarefas de software que o melhor modelo conclui sozinho em 50% das vezes")
+ax.text(pd.Timestamp("2020-01-15"), 0.2, "antes do GPT-4 a série só tem modelos antigos (GPT-2/GPT-3)",
+        fontsize=8.5, color=TEXTO_3, va="bottom")
 fonte(fig, "Epoch AI, benchmark_data.zip (METR time horizons), melhor valor acumulado no mês; marcos: anúncios oficiais.")
 plt.show()
 ''')
@@ -503,7 +505,7 @@ sw_var, md_var = desc["software_ultimo"] - 100, desc["mediana_ultimo"] - 100
 qual = lambda v: "menos" if v < 0 else "mais"
 titulo(a1x, f"Software tem {pct(abs(sw_var))} {qual(sw_var)} vagas que em 2020; os demais setores, {pct(abs(md_var))} {qual(md_var)}",
        "Índice de vagas anunciadas no Indeed (EUA), média mensal; juros no painel de baixo")
-fonte(fig, "Indeed Hiring Lab (job_postings_by_sector_US); Fed Funds: FRED via DBnomics.")
+fonte(fig, "Indeed Hiring Lab (job_postings_by_sector_US); Fed Funds: Federal Reserve H.15 via DBnomics.")
 plt.show()
 ''')
 
