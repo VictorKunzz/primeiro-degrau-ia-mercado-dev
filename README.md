@@ -10,7 +10,7 @@ Atividade de **Data Storytelling** da disciplina de Ciência de Dados (Católica
 - **No Google Colab:** clique no botão acima e depois em *Ambiente de execução → Executar tudo*. A primeira célula baixa os dados deste repositório.
 - **No GitHub:** [`notebooks/primeiro_degrau.ipynb`](notebooks/primeiro_degrau.ipynb) já vem executado, e o GitHub mostra os gráficos direto na página.
 - **Sem código:** [`reports/primeiro_degrau.html`](reports/primeiro_degrau.html). Baixe o arquivo e abra no navegador.
-- **Painel interativo:** `streamlit run app/streamlit_app.py`. Nele dá para mexer nas premissas da conta do gestor e explorar as séries do Stack Overflow, o primeiro degrau e as vagas.
+- **Painel interativo:** https://primeiro-degrau-ia-dev.streamlit.app (ou localmente com `streamlit run app/streamlit_app.py`). Nele dá para mexer nas premissas da conta do gestor e explorar as séries do Stack Overflow, o primeiro degrau e as vagas.
 
 ## Resumo executivo
 
